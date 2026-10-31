@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Shield Glow / Border -->
+    <path
+        android:pathData="M54,24 L78,34 C78,56 68,73 54,82 C40,73 30,56 30,34 Z"
+        android:strokeWidth="2.5"
+        android:strokeColor="#38BDF8"
+        android:fillColor="#1A0284C7" />
+
+    <!-- Inner Shield Body -->
+    <path
+        android:pathData="M54,28 L74,36 C74,54 65,68 54,76 C43,68 34,54 34,36 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="34"
+                android:startY="28"
+                android:endX="74"
+                android:endY="76"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00E5FF" />
+                <item android:offset="1.0" android:color="#0284C7" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Network Tunnel / Lock symbol in Center -->
+    <!-- Lock Shackle -->
+    <path
+        android:pathData="M48,48 L48,44 C48,40.7 50.7,38 54,38 C57.3,38 60,40.7 60,44 L60,48"
+        android:strokeWidth="3.2"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <!-- Lock Body -->
+    <path
+        android:pathData="M45,48 L63,48 C64.1,48 65,48.9 65,50 L65,62 C65,63.1 64.1,64 63,64 L45,64 C43.9,64 43,63.1 43,62 L43,50 C43,48.9 43.9,48 45,48 Z"
+        android:fillColor="#FFFFFF" />
+    <!-- Keyhole & Tunnel Node -->
+    <path
+        android:pathData="M54,53 C52.9,53 52,53.9 52,55 C52,55.8 52.5,56.5 53.2,56.8 L52.5,60 L55.5,60 L54.8,56.8 C55.5,56.5 56,55.8 56,55 C56,53.9 55.1,53 54,53 Z"
+        android:fillColor="#0B192C" />
+</vector>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0B111E">
+  <meta name="description" content="VPN Settings - HTTP Custom Config Manager (PWA)">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <title>VPN Settings (PWA)</title>
+  <style>
+    :root {
+      --bg: #0B111E;
+      --card-bg: #111928;
+      --surface: #192438;
+      --border: #25334E;
+      --primary: #00E5FF;
+      --primary-hover: #00B4D8;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --accent-green: #10B981;
+      --accent-red: #EF4444;
+      --accent-purple: #A855F7;
+      --accent-amber: #F59E0B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(17, 25, 40, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0, 229, 255, 0.15);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary); font-weight: bold; font-size: 18px;
+    }
+    .brand-title { font-size: 16px; font-weight: bold; }
+    .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .card-title {
+      font-size: 15px; font-weight: bold; color: var(--text);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    }
+    .card-subtitle { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+
+    .btn {
+      background: var(--primary); color: #0A0F1D;
+      border: none; border-radius: 10px;
+      padding: 8px 14px; font-weight: bold; font-size: 13px;
+      cursor: pointer; transition: 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover { background: var(--surface); border-color: var(--primary); }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      padding: 10px 12px; font-size: 14px;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--primary);
+    }
+    textarea { font-family: monospace; font-size: 12px; line-height: 1.5; resize: vertical; }
+
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+
+    /* Mode options */
+    .mode-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .mode-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: 0.2s;
+    }
+    .mode-item.active {
+      border-color: var(--primary); background: rgba(0, 229, 255, 0.08);
+    }
+    .mode-badge {
+      padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold;
+    }
+
+    .tags-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin: 8px 0; }
+    .tag-chip {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 8px; font-size: 11px;
+      font-family: monospace; cursor: pointer; white-space: nowrap;
+    }
+    .tag-chip:hover { border-color: var(--primary); color: var(--primary); }
+
+    .switch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); border-radius: 10px; padding: 10px 12px;
+    }
+    .switch {
+      position: relative; display: inline-block; width: 44px; height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155; transition: .3s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; transition: .3s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #0A0F1D; }
+
+    .nav-tabs {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(17, 25, 40, 0.98);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 10px 0; z-index: 100;
+    }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center;
+      background: none; border: none; color: var(--text-muted);
+      font-size: 11px; cursor: pointer; gap: 4px;
+    }
+    .nav-tab.active { color: var(--primary); font-weight: bold; }
+
+    .toast {
+      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      background: var(--accent-green); color: #0A0F1D;
+      padding: 10px 18px; border-radius: 20px; font-weight: bold; font-size: 13px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 200;
+      opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    .preview-box {
+      background: #060911; border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; font-family: monospace;
+      font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">🛡️</div>
+      <div>
+        <div class="brand-title">VPN Settings</div>
+        <div class="brand-sub">HTTP Custom Config (PWA)</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <select id="profileSelect" onchange="switchProfile(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px;"></select>
+      <button class="btn" onclick="saveSettings()">บันทึก</button>
+    </div>
+  </header>
+
+  <div class="container" id="editorView">
+    <!-- Profile Info Card -->
+    <div class="card">
+      <div class="card-title">📁 โปรไฟล์การตั้งค่า (ไม่ต้องใช้ไฟล์ .ini)</div>
+      <div class="card-subtitle">ข้อมูลทั้งหมดจะถูกบันทึกในแอปและเบราว์เซอร์อัตโนมัติ</div>
+      <div class="row">
+        <input type="text" id="profileName" placeholder="ชื่อโปรไฟล์" oninput="updateProfileName(this.value)">
+        <button class="btn btn-outline" onclick="addNewProfile()">+ เพิ่ม</button>
+        <button class="btn btn-outline" onclick="duplicateProfile()">คัดลอก</button>
+        <button class="btn btn-danger" onclick="deleteCurrentProfile()">ลบ</button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Card -->
+    <div class="card">
+      <div class="card-title">🔀 โหมดการเชื่อมต่อ (connection_mode)</div>
+      <div class="card-subtitle">เลือกรูปแบบการเชื่อมต่อ VPN ให้ตรงกับการใช้งาน</div>
+      <div class="mode-grid">
+        <div class="mode-item" onclick="setMode(0)" id="mode0">
+          <span class="mode-badge" style="background: rgba(56,189,248,0.2); color: #38BDF8;">โหมด 0</span>
+          <div>
+            <div style="font-weight: bold; font-size: 13px;">SSH Direct</div>
+            <div style="font-size: 11px; color: var(--text-muted);">เชื่อมต่อ SSH โดยตรง ไม่ใช้ Payload หรือ SNI</div>
+          </div>
+        </div>
+        <div class="mode-item" onclick="setMode(1)" id="mode1">
+          <span class="mode-badge" style="background: rgba(0,229,255,0.2); color: #00E5FF;">โหมด 1</span>
+          <div>
+            <div style="font-weight: bold; font-size: 13px;">HTTP Payload</div>
+            <div style="font-size: 11px; color: var(--text-muted);">ส่ง Custom Headers พร้อม Squid หรือ Remote Proxy</div>
+          </div>
+        </div>
+        <div class="mode-item" onclick="setMode(2)" id="mode2">
+          <span class="mode-badge" style="background: rgba(168,85,247,0.2); color: #A855F7;">โหมด 2</span>
+          <div>
+            <div style="font-weight: bold; font-size: 13px;">SSL / TLS (SNI)</div>
+            <div style="font-size: 11px; color: var(--text-muted);">Handshake ผ่าน SNI Host เช่น fast.com, line.me</div>
+          </div>
+        </div>
+        <div class="mode-item" onclick="setMode(3)" id="mode3">
+          <span class="mode-badge" style="background: rgba(245,158,11,0.2); color: #F59E0B;">โหมด 3</span>
+          <div>
+            <div style="font-weight: bold; font-size: 13px;">Payload + SNI</div>
+            <div style="font-size: 11px; color: var(--text-muted);">ผสานทั้ง HTTP Headers และ SSL SNI พร้อมกัน</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <div style="font-size: 13px; font-weight: bold;">แทนที่แท็กอัตโนมัติ (auto_replace)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">แปลง [host], [port], [crlf] เป็นค่าจริง</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="autoReplace" onchange="updateDraft()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- SSH Server Card -->
+    <div class="card">
+      <div class="card-title">🖥️ เซิร์ฟเวอร์ SSH ([ssh])</div>
+      <div class="row">
+        <div class="col" style="flex: 2;">
+          <label>SSH Host / IP</label>
+          <input type="text" id="sshHost" placeholder="เช่น sg-server.net" oninput="updateDraft()">
+        </div>
+        <div class="col">
+          <label>Port</label>
+          <input type="text" id="sshPort" placeholder="22" oninput="updateDraft()">
+        </div>
+      </div>
+      <div class="row" style="margin-top: 10px;">
+        <div class="col">
+          <label>Username</label>
+          <input type="text" id="sshUsername" placeholder="ssh-user" oninput="updateDraft()">
+        </div>
+        <div class="col">
+          <label>Password</label>
+          <input type="password" id="sshPassword" placeholder="••••••••" oninput="updateDraft()">
+        </div>
+      </div>
+      <div class="switch-row" style="margin-top: 12px;">
+        <div>
+          <div style="font-size: 13px; font-weight: bold;">บีบอัดข้อมูล SSH (enable_compression)</div>
+          <div style="font-size: 11px; color: var(--text-muted);">เปิดใช้งานคำสั่ง -C เพื่อประหยัดเน็ต</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="enableCompression" onchange="updateDraft()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Payload & Proxy Card -->
+    <div class="card">
+      <div class="card-title">🌐 เพย์โหลด & พร็อกซี ([Payload])</div>
+      <div class="card-subtitle">ปรับแต่ง HTTP Custom Headers</div>
+      
+      <div class="row" style="margin-bottom: 8px;">
+        <select onchange="applyTemplate(this.value)">
+          <option value="">-- เลือกเทมเพลตเพย์โหลดสำเร็จรูป --</option>
+          <option value="ws_cdn">WebSocket Cloudflare CDN (มาตรฐาน)</option>
+          <option value="http_direct">HTTP Direct CONNECT</option>
+          <option value="front_inject">Front Domain / SNI Inject</option>
+          <option value="split_instant">Instant Split Payload</option>
+          <option value="split_delay">Delay Split Payload (0.5s)</option>
+        </select>
+      </div>
+
+      <div class="tags-bar">
+        <span class="tag-chip" onclick="insertTag('[crlf]')">[crlf]</span>
+        <span class="tag-chip" onclick="insertTag('[crlf*2]')">[crlf*2]</span>
+        <span class="tag-chip" onclick="insertTag('[host]')">[host]</span>
+        <span class="tag-chip" onclick="insertTag('[port]')">[port]</span>
+        <span class="tag-chip" onclick="insertTag('[host_port]')">[host_port]</span>
+        <span class="tag-chip" onclick="insertTag('[ua]')">[ua]</span>
+        <span class="tag-chip" onclick="insertTag('[protocol]')">[protocol]</span>
+        <span class="tag-chip" onclick="insertTag('[split]')">[split]</span>
+        <span class="tag-chip" onclick="insertTag('[delay_split]')">[delay_split]</span>
+      </div>
+
+      <textarea id="payloadText" rows="4" oninput="updateDraft()"></textarea>
+
+      <div class="row" style="margin-top: 10px;">
+        <div class="col" style="flex: 2;">
+          <label>Remote Proxy IP</label>
+          <input type="text" id="proxyIp" placeholder="เช่น 104.16.249.249 (ว่าง = ต่อตรง)" oninput="updateDraft()">
+        </div>
+        <div class="col">
+          <label>Proxy Port</label>
+          <input type="text" id="proxyPort" placeholder="8080" oninput="updateDraft()">
+        </div>
+      </div>
+    </div>
+
+    <!-- SNI Card -->
+    <div class="card">
+      <div class="card-title">🔒 Server Name Indication ([sni])</div>
+      <div class="card-subtitle">ใช้สำหรับโหมด 2 (SSL) และโหมด 3 (Payload+SNI)</div>
+      <input type="text" id="sniServerName" placeholder="เช่น m.facebook.com, zoom.us, line.me" oninput="updateDraft()">
+    </div>
+  </div>
+
+  <!-- Preview View -->
+  <div class="container" id="previewView" style="display: none;">
+    <div class="card">
+      <div class="card-title">⚡ พรีวิวเพย์โหลดจริง (Live Formatted)</div>
+      <div class="card-subtitle">ข้อความที่ injector จะส่งไปยังเซิร์ฟเวอร์จริง</div>
+      <div class="preview-box" id="formattedPayloadPreview"></div>
+      <div style="margin-top: 10px;">
+        <button class="btn btn-outline" onclick="copyFormattedPayload()">📋 คัดลอกเพย์โหลด</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📄 โครงสร้าง settings.ini เสมือน</div>
+      <div class="card-subtitle">สำหรับคัดลอกไปรันบน VPS / runvpn.sh</div>
+      <div class="preview-box" id="iniPreview"></div>
+      <div style="margin-top: 10px;">
+        <button class="btn btn-outline" onclick="copyIni()">📋 คัดลอก INI</button>
+        <button class="btn btn-outline" onclick="downloadIniFile()">💾 บันทึกเป็นไฟล์ .ini</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import / Export View -->
+  <div class="container" id="toolsView" style="display: none;">
+    <div class="card">
+      <div class="card-title">📥 นำเข้าการตั้งค่าจาก settings.ini</div>
+      <div class="card-subtitle">วางเนื้อหาไฟล์ .ini เพื่อแปลงเป็นโปรไฟล์ในแอป</div>
+      <textarea id="importIniInput" rows="6" placeholder="[mode]&#10;connection_mode = 1&#10;..."></textarea>
+      <div style="margin-top: 10px;">
+        <button class="btn" onclick="importFromIniText()">นำเข้าเป็นโปรไฟล์ใหม่</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📱 ติดตั้งเป็นแอป PWA</div>
+      <div class="card-subtitle">คุณสามารถติดตั้งเว็บนี้ลงหน้าจอมือถือ หรือนำ URL ไปแปลงเป็น APK ผ่าน PWABuilder.com ได้</div>
+      <button class="btn btn-outline" id="installPwaBtn" style="display: none;" onclick="installPWA()">📲 ติดตั้งแอปบนมือถือ</button>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab(0)" id="tab0">
+      <span>✏️</span>
+      <span>แก้ไขการตั้งค่า</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(1)" id="tab1">
+      <span>⚡</span>
+      <span>พรีวิวเพย์โหลด</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab(2)" id="tab2">
+      <span>⚙️</span>
+      <span>เครื่องมือ / นำเข้า</span>
+    </button>
+  </div>
+
+  <div class="toast" id="toast">บันทึกเรียบร้อยแล้ว</div>
+
+  <script>
+    const DEFAULT_PROFILES = [
+      {
+        id: "p1",
+        name: "WebSocket CDN (ค่าเริ่มต้น)",
+        connectionMode: 1,
+        autoReplace: true,
+        payload: "GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]",
+        proxyIp: "",
+        proxyPort: "8080",
+        sshHost: "sg-server.net",
+        sshPort: "22",
+        sshUsername: "vpnuser",
+        sshPassword: "vpnpassword",
+        enableCompression: false,
+        sniServerName: ""
+      },
+      {
+        id: "p2",
+        name: "SSH Direct (โหมด 0)",
+        connectionMode: 0,
+        autoReplace: true,
+        payload: "CONNECT [host_port] HTTP/1.1[crlf][crlf]",
+        proxyIp: "",
+        proxyPort: "",
+        sshHost: "ssh.mycloud.com",
+        sshPort: "22",
+        sshUsername: "root",
+        sshPassword: "",
+        enableCompression: true,
+        sniServerName: ""
+      },
+      {
+        id: "p3",
+        name: "SSL / TLS SNI (โหมด 2)",
+        connectionMode: 2,
+        autoReplace: true,
+        payload: "CONNECT [host_port] HTTP/1.1[crlf]Host: [host][crlf][crlf]",
+        proxyIp: "104.16.249.249",
+        proxyPort: "443",
+        sshHost: "vpn.cloudflare-cdn.com",
+        sshPort: "443",
+        sshUsername: "vpnuser",
+        sshPassword: "",
+        enableCompression: false,
+        sniServerName: "fast.com"
+      }
+    ];
+
+    let profiles = [];
+    let activeProfileId = "";
+    let deferredPrompt = null;
+
+    function init() {
+      const saved = localStorage.getItem("vpn_pwa_profiles");
+      if (saved) {
+        try { profiles = JSON.parse(saved); } catch(e) { profiles = DEFAULT_PROFILES; }
+      } else {
+        profiles = DEFAULT_PROFILES;
+      }
+      activeProfileId = localStorage.getItem("vpn_pwa_active_id") || profiles[0].id;
+      renderProfileSelect();
+      loadActiveProfile();
+    }
+
+    function renderProfileSelect() {
+      const select = document.getElementById("profileSelect");
+      select.innerHTML = "";
+      profiles.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === activeProfileId) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function getActiveProfile() {
+      return profiles.find(p => p.id === activeProfileId) || profiles[0];
+    }
+
+    function loadActiveProfile() {
+      const p = getActiveProfile();
+      document.getElementById("profileName").value = p.name;
+      setMode(p.connectionMode, false);
+      document.getElementById("autoReplace").checked = p.autoReplace;
+      document.getElementById("sshHost").value = p.sshHost || "";
+      document.getElementById("sshPort").value = p.sshPort || "22";
+      document.getElementById("sshUsername").value = p.sshUsername || "";
+      document.getElementById("sshPassword").value = p.sshPassword || "";
+      document.getElementById("enableCompression").checked = p.enableCompression;
+      document.getElementById("payloadText").value = p.payload || "";
+      document.getElementById("proxyIp").value = p.proxyIp || "";
+      document.getElementById("proxyPort").value = p.proxyPort || "";
+      document.getElementById("sniServerName").value = p.sniServerName || "";
+      updatePreviews();
+    }
+
+    function setMode(mode, triggerUpdate = true) {
+      [0, 1, 2, 3].forEach(m => {
+        const el = document.getElementById(`mode${m}`);
+        if (el) el.classList.toggle("active", m === mode);
+      });
+      if (triggerUpdate) {
+        getActiveProfile().connectionMode = mode;
+        updatePreviews();
+      }
+    }
+
+    function updateDraft() {
+      const p = getActiveProfile();
+      p.autoReplace = document.getElementById("autoReplace").checked;
+      p.sshHost = document.getElementById("sshHost").value.trim();
+      p.sshPort = document.getElementById("sshPort").value.trim();
+      p.sshUsername = document.getElementById("sshUsername").value;
+      p.sshPassword = document.getElementById("sshPassword").value;
+      p.enableCompression = document.getElementById("enableCompression").checked;
+      p.payload = document.getElementById("payloadText").value;
+      p.proxyIp = document.getElementById("proxyIp").value.trim();
+      p.proxyPort = document.getElementById("proxyPort").value.trim();
+      p.sniServerName = document.getElementById("sniServerName").value.trim();
+      updatePreviews();
+    }
+
+    function updateProfileName(name) {
+      getActiveProfile().name = name;
+      renderProfileSelect();
+    }
+
+    function insertTag(tag) {
+      const textarea = document.getElementById("payloadText");
+      textarea.value += tag;
+      updateDraft();
+    }
+
+    function applyTemplate(type) {
+      const p = getActiveProfile();
+      if (type === "ws_cdn") {
+        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]";
+        setMode(1);
+      } else if (type === "http_direct") {
+        p.payload = "CONNECT [host_port] HTTP/1.0[crlf]Host: [host][crlf][crlf]";
+        setMode(1);
+      } else if (type === "front_inject") {
+        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]X-Online-Host: [host][crlf]Connection: Keep-Alive[crlf]User-Agent: [ua][crlf][crlf]";
+        setMode(3);
+      } else if (type === "split_instant") {
+        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf][split]Connection: Upgrade[crlf]Upgrade: websocket[crlf][crlf]";
+        setMode(1);
+      } else if (type === "split_delay") {
+        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf][delay_split]User-Agent: [ua][crlf]Connection: Upgrade[crlf][crlf]";
+        setMode(1);
+      }
+      document.getElementById("payloadText").value = p.payload;
+      updatePreviews();
+      showToast("นำเทมเพลตมาใช้งานแล้ว");
+    }
+
+    function saveSettings() {
+      updateDraft();
+      localStorage.setItem("vpn_pwa_profiles", JSON.stringify(profiles));
+      localStorage.setItem("vpn_pwa_active_id", activeProfileId);
+      showToast("บันทึกการตั้งค่าเรียบร้อยแล้ว (ไม่ต้องใช้ไฟล์ .ini)");
+    }
+
+    function addNewProfile() {
+      const name = prompt("ตั้งชื่อโปรไฟล์ใหม่:", `โปรไฟล์ที่ ${profiles.length + 1}`);
+      if (!name) return;
+      const newP = JSON.parse(JSON.stringify(getActiveProfile()));
+      newP.id = "p_" + Date.now();
+      newP.name = name;
+      profiles.push(newP);
+      activeProfileId = newP.id;
+      saveSettings();
+      renderProfileSelect();
+      loadActiveProfile();
+    }
+
+    function duplicateProfile() {
+      const current = getActiveProfile();
+      const newP = JSON.parse(JSON.stringify(current));
+      newP.id = "p_" + Date.now();
+      newP.name = `${current.name} (คัดลอก)`;
+      profiles.push(newP);
+      activeProfileId = newP.id;
+      saveSettings();
+      renderProfileSelect();
+      loadActiveProfile();
+      showToast("คัดลอกโปรไฟล์เรียบร้อย");
+    }
+
+    function deleteCurrentProfile() {
+      if (profiles.length <= 1) {
+        alert("ต้องมีโปรไฟล์อย่างน้อย 1 รายการ");
+        return;
+      }
+      if (!confirm(`ต้องการลบโปรไฟล์ "${getActiveProfile().name}" หรือไม่?`)) return;
+      profiles = profiles.filter(p => p.id !== activeProfileId);
+      activeProfileId = profiles[0].id;
+      saveSettings();
+      renderProfileSelect();
+      loadActiveProfile();
+      showToast("ลบโปรไฟล์เรียบร้อย");
+    }
+
+    function switchProfile(id) {
+      activeProfileId = id;
+      loadActiveProfile();
+      showToast(`สลับเป็นโปรไฟล์: ${getActiveProfile().name}`);
+    }
+
+    function formatPayloadString(p) {
+      const host = p.sshHost || "127.0.0.1";
+      const port = p.sshPort || "22";
+      let res = p.payload || "";
+      res = res.replaceAll("[crlf]", "\r\n")
+               .replaceAll("[crlf*2]", "\r\n\r\n")
+               .replaceAll("[cr]", "\r")
+               .replaceAll("[lf]", "\n")
+               .replaceAll("[protocol]", "HTTP/1.0")
+               .replaceAll("[ua]", "Dalvik/2.1.0")
+               .replaceAll("[raw]", `CONNECT ${host}:${port} HTTP/1.0\r\n\r\n`)
+               .replaceAll("[netData]", `CONNECT ${host}:${port} HTTP/1.0`)
+               .replaceAll("[method]", "CONNECT")
+               .replaceAll("[ssh]", `${host}:${port}`)
+               .replaceAll("[host_port]", `${host}:${port}`)
+               .replaceAll("[host]", host)
+               .replaceAll("[port]", port)
+               .replaceAll("[split]", "=0.1=")
+               .replaceAll("[delay_split]", "=0.5=")
+               .replaceAll("[instant_split]", "=0.0=");
+      return res;
+    }
+
+    function generateIniText(p) {
+      return `[mode]
+connection_mode = ${p.connectionMode}
+auto_replace = ${p.autoReplace ? "y" : "n"}
+
+[Payload]
+payload = ${p.payload}
+proxyip = ${p.proxyIp}
+proxyport = ${p.proxyPort}
+
+[ssh]
+host = ${p.sshHost}
+port = ${p.sshPort}
+username = ${p.sshUsername}
+password = ${p.sshPassword}
+enable_compression = ${p.enableCompression ? "y" : "n"}
+#authentication method : password | publickey
+auth_methode = password
+
+[sni]
+server_name = ${p.sniServerName}
+`;
+    }
+
+    function updatePreviews() {
+      const p = getActiveProfile();
+      document.getElementById("formattedPayloadPreview").textContent = formatPayloadString(p);
+      document.getElementById("iniPreview").textContent = generateIniText(p);
+    }
+
+    function copyFormattedPayload() {
+      navigator.clipboard.writeText(formatPayloadString(getActiveProfile())).then(() => showToast("คัดลอกเพย์โหลดแล้ว"));
+    }
+
+    function copyIni() {
+      navigator.clipboard.writeText(generateIniText(getActiveProfile())).then(() => showToast("คัดลอก INI แล้ว"));
+    }
+
+    function downloadIniFile() {
+      const blob = new Blob([generateIniText(getActiveProfile())], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "settings.ini";
+      a.click();
+    }
+
+    function importFromIniText() {
+      const text = document.getElementById("importIniInput").value;
+      if (!text.trim()) return alert("กรุณาวางเนื้อหา settings.ini ก่อน");
+      const lines = text.split("\n");
+      let sec = "";
+      const p = JSON.parse(JSON.stringify(getActiveProfile()));
+      p.id = "p_" + Date.now();
+      p.name = "นำเข้า (" + new Date().toLocaleTimeString() + ")";
+
+      lines.forEach(l => {
+        const line = l.trim();
+        if (!line || line.startsWith("#") || line.startsWith(";")) return;
+        if (line.startsWith("[") && line.endsWith("]")) {
+          sec = line.substring(1, line.length - 1).toLowerCase();
+          return;
+        }
+        const eq = line.indexOf("=");
+        if (eq === -1) return;
+        const key = line.substring(0, eq).trim().toLowerCase();
+        const val = line.substring(eq + 1).trim();
+
+        if (sec === "mode") {
+          if (key === "connection_mode") p.connectionMode = parseInt(val) || 1;
+          if (key === "auto_replace") p.autoReplace = val.toLowerCase() === "y";
+        } else if (sec === "payload") {
+          if (key === "payload") p.payload = val;
+          if (key === "proxyip") p.proxyIp = val;
+          if (key === "proxyport") p.proxyPort = val;
+        } else if (sec === "ssh") {
+          if (key === "host") p.sshHost = val;
+          if (key === "port") p.sshPort = val;
+          if (key === "username") p.sshUsername = val;
+          if (key === "password") p.sshPassword = val;
+          if (key === "enable_compression") p.enableCompression = val.toLowerCase() === "y";
+        } else if (sec === "sni") {
+          if (key === "server_name") p.sniServerName = val;
+        }
+      });
+
+      profiles.push(p);
+      activeProfileId = p.id;
+      saveSettings();
+      renderProfileSelect();
+      loadActiveProfile();
+      switchTab(0);
+      showToast("นำเข้าการตั้งค่าเรียบร้อยแล้ว!");
+    }
+
+    function switchTab(idx) {
+      document.getElementById("editorView").style.display = idx === 0 ? "flex" : "none";
+      document.getElementById("previewView").style.display = idx === 1 ? "flex" : "none";
+      document.getElementById("toolsView").style.display = idx === 2 ? "flex" : "none";
+      [0, 1, 2].forEach(i => {
+        document.getElementById(`tab${i}`).classList.toggle("active", i === idx);
+      });
+      if (idx === 1) updatePreviews();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    // PWA Service Worker & Install
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed: ', err));
+      });
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('installPwaBtn');
+      if (btn) btn.style.display = 'block';
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "VPN Settings",
+  "description": "จัดการและแก้ไขการตั้งค่า VPN HTTP Custom Headers พร้อมระบบบันทึกโปรไฟล์ในแอปโดยไม่ต้องใช้ไฟล์ .ini",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
