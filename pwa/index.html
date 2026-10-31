@@ -163,6 +163,65 @@
       border-radius: 10px; padding: 12px; font-family: monospace;
       font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
     }
+
+    /* Animated Connection Modal */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(6, 11, 20, 0.88); backdrop-filter: blur(12px);
+      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .connect-modal {
+      background: #0D1424; border: 1.5px solid rgba(0, 230, 118, 0.4);
+      border-radius: 28px; width: 100%; max-width: 440px; padding: 26px 22px;
+      text-align: center; box-shadow: 0 10px 45px rgba(0, 230, 118, 0.25);
+      animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalSlide {
+      from { transform: scale(0.9) translateY(20px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .radar-box {
+      position: relative; width: 170px; height: 170px; margin: 0 auto 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .radar-ring {
+      position: absolute; border-radius: 50%; border: 3px solid #00E676;
+    }
+    .radar-ring.outer {
+      width: 155px; height: 155px; border-width: 2px;
+      animation: pulseOuter 2s infinite ease-out;
+    }
+    .radar-ring.inner {
+      width: 130px; height: 130px; border-width: 3.5px;
+      animation: pulseInner 1.4s infinite ease-in-out alternate;
+      background: rgba(0, 230, 118, 0.08);
+    }
+    .radar-shield {
+      width: 84px; height: 84px; border-radius: 50%;
+      background: #0D1424; border: 2px solid #00E676;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; z-index: 2;
+      box-shadow: 0 0 25px rgba(0, 230, 118, 0.5);
+    }
+    @keyframes pulseOuter {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      100% { transform: scale(1.25); opacity: 0; }
+    }
+    @keyframes pulseInner {
+      0% { transform: scale(0.92); }
+      100% { transform: scale(1.08); }
+    }
+    .checklist-card {
+      background: rgba(20, 28, 48, 0.85); border-radius: 14px;
+      padding: 14px 18px; margin: 20px 0; text-align: left;
+    }
+    .checklist-item {
+      display: flex; align-items: center; gap: 12px; font-size: 14px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .check-icon { font-size: 18px; width: 22px; text-align: center; }
   </style>
 </head>
 <body>
@@ -182,6 +241,24 @@
   </header>
 
   <div class="container" id="editorView">
+    <!-- Hero Connect Card -->
+    <div class="card" style="border-color: rgba(0, 230, 118, 0.4); background: #0E1626;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div id="heroPulseDot" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(0, 230, 118, 0.15); border: 2px solid #00E676; display: flex; align-items: center; justify-content: center; font-size: 22px;">
+            🛡️
+          </div>
+          <div>
+            <div id="heroVpnStatus" style="font-weight: bold; font-size: 16px;">ไม่ได้เชื่อมต่อ VPN</div>
+            <div id="heroVpnDesc" style="font-size: 12px; color: var(--text-muted);">พร้อมเชื่อมต่อไปยังเซิร์ฟเวอร์</div>
+          </div>
+        </div>
+        <button class="btn" id="heroConnectBtn" onclick="openConnectModal()" style="background: #00E676; color: #0A0F1D; font-size: 14px; padding: 10px 18px;">
+          ▶ เชื่อมต่อ
+        </button>
+      </div>
+    </div>
+
     <!-- Profile Info Card -->
     <div class="card">
       <div class="card-title">📁 โปรไฟล์การตั้งค่า (ไม่ต้องใช้ไฟล์ .ini)</div>
@@ -363,6 +440,43 @@
       <div class="card-title">📱 ติดตั้งเป็นแอป PWA</div>
       <div class="card-subtitle">คุณสามารถติดตั้งเว็บนี้ลงหน้าจอมือถือ หรือนำ URL ไปแปลงเป็น APK ผ่าน PWABuilder.com ได้</div>
       <button class="btn btn-outline" id="installPwaBtn" style="display: none;" onclick="installPWA()">📲 ติดตั้งแอปบนมือถือ</button>
+    </div>
+  </div>
+
+  <!-- Connection Modal (Matches uploaded screenshot) -->
+  <div class="modal-overlay" id="connectModalOverlay">
+    <div class="connect-modal">
+      <div style="text-align: right; margin-bottom: -10px;">
+        <span onclick="closeConnectModal()" style="cursor: pointer; font-size: 20px; color: var(--text-muted);">&times;</span>
+      </div>
+
+      <div class="radar-box">
+        <div class="radar-ring outer"></div>
+        <div class="radar-ring inner"></div>
+        <div class="radar-shield">🔒</div>
+      </div>
+
+      <div id="modalStatusTitle" style="font-size: 20px; font-weight: bold; margin-bottom: 6px;">กำลังเชื่อมต่อ SSH...</div>
+      <div id="modalStatusSub" style="font-size: 13px; color: #00E676; display: none;">00:00 • เชื่อมต่อสำเร็จแล้ว</div>
+
+      <div class="checklist-card">
+        <div class="checklist-item">
+          <span class="check-icon" id="chkIcon1" style="color: #00E676;">⚪</span>
+          <span id="chkText1">เชื่อมต่อ Proxy สำเร็จ</span>
+        </div>
+        <div class="checklist-item">
+          <span class="check-icon" id="chkIcon2" style="color: #00E676;">⚪</span>
+          <span id="chkText2">กำลังเชื่อมต่อ SSH Server</span>
+        </div>
+        <div class="checklist-item">
+          <span class="check-icon" id="chkIcon3" style="color: #00E676;">⚪</span>
+          <span id="chkText3">กำลังตั้งค่าเส้นทางเครือข่าย</span>
+        </div>
+      </div>
+
+      <button class="btn" id="modalActionBtn" onclick="handleModalAction()" style="width: 100%; height: 48px; border-radius: 24px; background: #334A68; border: 1px solid #4C6B92; color: #FFFFFF; font-size: 16px;">
+        ยกเลิก
+      </button>
     </div>
   </div>
 
@@ -748,6 +862,106 @@ server_name = ${p.sniServerName}
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
       }
+    }
+
+    // --- VPN Connect Simulation & Animation ---
+    let vpnConnected = false;
+    let vpnTimer = null;
+    let vpnSeconds = 0;
+    let connectStepTimer = null;
+
+    function openConnectModal() {
+      document.getElementById("connectModalOverlay").classList.add("active");
+      if (!vpnConnected) {
+        startConnectSimulation();
+      }
+    }
+
+    function closeConnectModal() {
+      document.getElementById("connectModalOverlay").classList.remove("active");
+    }
+
+    function startConnectSimulation() {
+      vpnConnected = false;
+      vpnSeconds = 0;
+      clearInterval(vpnTimer);
+      clearTimeout(connectStepTimer);
+
+      document.getElementById("modalStatusTitle").textContent = "กำลังเริ่มการเชื่อมต่อ...";
+      document.getElementById("modalStatusSub").style.display = "none";
+      document.getElementById("chkIcon1").textContent = "⚪";
+      document.getElementById("chkIcon2").textContent = "⚪";
+      document.getElementById("chkIcon3").textContent = "⚪";
+      document.getElementById("modalActionBtn").textContent = "ยกเลิก";
+      document.getElementById("modalActionBtn").style.background = "#334A68";
+
+      // Step 1: Proxy
+      setTimeout(() => {
+        document.getElementById("chkIcon1").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อ Proxy สำเร็จ";
+      }, 700);
+
+      // Step 2: SSH
+      setTimeout(() => {
+        document.getElementById("chkIcon2").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "กำลังเชื่อมต่อ SSH...";
+      }, 1600);
+
+      // Step 3: Network route
+      setTimeout(() => {
+        document.getElementById("chkIcon3").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "กำลังตั้งค่าเส้นทางเครือข่าย";
+      }, 2500);
+
+      // Final Connected
+      connectStepTimer = setTimeout(() => {
+        vpnConnected = true;
+        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อสำเร็จแล้ว!";
+        document.getElementById("modalStatusSub").style.display = "block";
+        document.getElementById("modalActionBtn").textContent = "ตัดการเชื่อมต่อ";
+        document.getElementById("modalActionBtn").style.background = "#27354A";
+
+        // Update hero card on main screen
+        document.getElementById("heroVpnStatus").textContent = "เชื่อมต่อแล้ว (Connected)";
+        document.getElementById("heroVpnStatus").style.color = "#00E676";
+        document.getElementById("heroConnectBtn").textContent = "⏹ จัดการ";
+        document.getElementById("heroConnectBtn").style.background = "#00E676";
+
+        // Start timer
+        vpnTimer = setInterval(() => {
+          vpnSeconds++;
+          const m = String(Math.floor(vpnSeconds / 60)).padStart(2, '0');
+          const s = String(vpnSeconds % 60).padStart(2, '0');
+          document.getElementById("modalStatusSub").textContent = `${m}:${s} • ${getActiveProfile().sshHost || 'VPN Tunnel'}`;
+          document.getElementById("heroVpnDesc").textContent = `เชื่อมต่อแล้ว ${m}:${s}`;
+        }, 1000);
+      }, 3200);
+    }
+
+    function handleModalAction() {
+      if (vpnConnected) {
+        disconnectVpn();
+      } else {
+        cancelVpnConnect();
+      }
+    }
+
+    function cancelVpnConnect() {
+      clearTimeout(connectStepTimer);
+      clearInterval(vpnTimer);
+      vpnConnected = false;
+      closeConnectModal();
+      document.getElementById("heroVpnStatus").textContent = "ไม่ได้เชื่อมต่อ VPN";
+      document.getElementById("heroVpnStatus").style.color = "var(--text)";
+      document.getElementById("heroVpnDesc").textContent = "พร้อมเชื่อมต่อไปยังเซิร์ฟเวอร์";
+      document.getElementById("heroConnectBtn").textContent = "▶ เชื่อมต่อ";
+      document.getElementById("heroConnectBtn").style.background = "#00E676";
+      showToast("ยกเลิกการเชื่อมต่อ");
+    }
+
+    function disconnectVpn() {
+      cancelVpnConnect();
+      showToast("ตัดการเชื่อมต่อ VPN แล้ว");
     }
 
     init();

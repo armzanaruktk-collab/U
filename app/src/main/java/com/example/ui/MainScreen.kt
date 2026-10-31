@@ -44,6 +44,8 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -79,6 +81,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.ConnectionModal
 import com.example.ui.components.DeleteProfileDialog
 import com.example.ui.components.ExportIniDialog
 import com.example.ui.components.ImportIniDialog
@@ -93,6 +96,8 @@ import com.example.ui.components.SshSection
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.AccentRed
 import com.example.ui.theme.CyberCyan
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -377,6 +382,114 @@ fun MainScreen(
                 0 -> {
                     // TAB 0: Settings Editor
                     item {
+                        // HERO CONNECT CARD (With Glowing Animation Trigger)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("vpn_connect_hero_card"),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF0F1A2E)
+                            ),
+                            border = BorderStroke(
+                                1.5.dp,
+                                if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676)
+                                else if (uiState.vpnStatus == VpnStatus.CONNECTING) Color(0xFF00E5FF)
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676).copy(alpha = 0.2f)
+                                               else if (uiState.vpnStatus == VpnStatus.CONNECTING) Color(0xFF00E5FF).copy(alpha = 0.2f)
+                                               else Color.White.copy(alpha = 0.08f),
+                                        border = BorderStroke(
+                                            2.dp,
+                                            if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676)
+                                            else if (uiState.vpnStatus == VpnStatus.CONNECTING) Color(0xFF00E5FF)
+                                            else Color.White.copy(alpha = 0.2f)
+                                        ),
+                                        modifier = Modifier.size(52.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                imageVector = Icons.Default.Security,
+                                                contentDescription = null,
+                                                tint = if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676)
+                                                       else if (uiState.vpnStatus == VpnStatus.CONNECTING) Color(0xFF00E5FF)
+                                                       else Color.White.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(28.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(14.dp))
+
+                                    Column {
+                                        Text(
+                                            text = when (uiState.vpnStatus) {
+                                                VpnStatus.CONNECTED -> "เชื่อมต่อแล้ว (Connected)"
+                                                VpnStatus.CONNECTING -> "กำลังเชื่อมต่อ..."
+                                                VpnStatus.DISCONNECTED -> "ไม่ได้เชื่อมต่อ VPN"
+                                            },
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = if (uiState.vpnStatus == VpnStatus.CONNECTED) {
+                                                val mins = uiState.connectedSeconds / 60
+                                                val secs = uiState.connectedSeconds % 60
+                                                String.format(Locale.getDefault(), "%02d:%02d • %s", mins, secs, uiState.editingConfig.sshHost.ifBlank { "VPN Tunnel" })
+                                            } else {
+                                                "โหมด ${uiState.editingConfig.connectionMode} • ${uiState.editingConfig.sshHost.ifBlank { "ยังไม่ระบุ Host" }}"
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+
+                                Button(
+                                    onClick = { viewModel.openConnectionModal() },
+                                    modifier = Modifier.testTag("hero_connect_button"),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (uiState.vpnStatus == VpnStatus.CONNECTED) Color(0xFF00E676)
+                                                         else if (uiState.vpnStatus == VpnStatus.CONNECTING) Color(0xFF00E5FF)
+                                                         else Color(0xFF0284C7)
+                                    )
+                                ) {
+                                    Icon(
+                                        imageVector = if (uiState.vpnStatus == VpnStatus.CONNECTED) Icons.Default.Stop else Icons.Default.PlayArrow,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0A0F1D),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (uiState.vpnStatus == VpnStatus.CONNECTED) "จัดการ" else "เชื่อมต่อ",
+                                        color = Color(0xFF0A0F1D),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    item {
                         // Profile Banner Card
                         Card(
                             modifier = Modifier
@@ -576,6 +689,21 @@ fun MainScreen(
         SniSuggestionsDialog(
             onDismiss = { viewModel.setShowSniSuggestionsDialog(false) },
             onSelectSni = { viewModel.applySniSuggestion(it) }
+        )
+    }
+
+    if (uiState.showConnectionModal) {
+        ConnectionModal(
+            status = uiState.vpnStatus,
+            step = uiState.connectionStep,
+            statusText = uiState.connectionStatusText,
+            connectedSeconds = uiState.connectedSeconds,
+            host = uiState.editingConfig.sshHost,
+            port = uiState.editingConfig.sshPort,
+            logs = uiState.connectionLogs,
+            onCancel = { viewModel.disconnectVpn() },
+            onDisconnect = { viewModel.disconnectVpn() },
+            onCloseModal = { viewModel.closeConnectionModal() }
         )
     }
 }

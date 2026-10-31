@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.VpnConfigRepository
 import com.example.model.VpnConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,6 +20,12 @@ import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+
+enum class VpnStatus {
+    DISCONNECTED,
+    CONNECTING,
+    CONNECTED
+}
 
 data class ConfigUiState(
     val profiles: List<VpnConfig> = emptyList(),
@@ -34,7 +42,14 @@ data class ConfigUiState(
     val showDeleteConfirmDialog: Boolean = false,
     val showTemplateDialog: Boolean = false,
     val showSniSuggestionsDialog: Boolean = false,
-    val selectedTab: Int = 0 // 0: Editor, 1: Live Preview, 2: Diagnostics
+    val selectedTab: Int = 0, // 0: Editor, 1: Live Preview, 2: Diagnostics
+    // Connection Animation States
+    val showConnectionModal: Boolean = false,
+    val vpnStatus: VpnStatus = VpnStatus.DISCONNECTED,
+    val connectionStep: Int = 0, // 0: Idle, 1: Proxy/Payload, 2: SSH Handshake, 3: Routing/Tunnel, 4: Connected
+    val connectionStatusText: String = "พร้อมเชื่อมต่อ",
+    val connectedSeconds: Long = 0,
+    val connectionLogs: List<String> = emptyList()
 ) {
     val hasUnsavedChanges: Boolean
         get() = editingConfig != originalConfig
@@ -53,6 +68,9 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val _events = MutableSharedFlow<UiEvent>()
     val events: SharedFlow<UiEvent> = _events.asSharedFlow()
+
+    private var connectJob: Job? = null
+    private var timerJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -271,6 +289,124 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
         } catch (e: Exception) {
             emitMessage("เกิดข้อผิดพลาดในการอ่านการตั้งค่า: ${e.localizedMessage}")
         }
+    }
+
+    // --- VPN CONNECT ANIMATION & LIFECYCLE ---
+    fun openConnectionModal() {
+        _uiState.update { it.copy(showConnectionModal = true) }
+        if (_uiState.value.vpnStatus == VpnStatus.DISCONNECTED) {
+            startVpnConnection()
+        }
+    }
+
+    fun closeConnectionModal() {
+        _uiState.update { it.copy(showConnectionModal = false) }
+    }
+
+    fun startVpnConnection() {
+        connectJob?.cancel()
+        timerJob?.cancel()
+
+        val config = _uiState.value.editingConfig
+        val proxyDesc = if (config.proxyIp.isNotBlank()) "${config.proxyIp}:${config.proxyPort.ifBlank { "8080" }}" else "Direct Connection"
+        val sshDesc = "${config.sshHost.ifBlank { "127.0.0.1" }}:${config.sshPort.ifBlank { "22" }}"
+
+        _uiState.update {
+            it.copy(
+                vpnStatus = VpnStatus.CONNECTING,
+                connectionStep = 0,
+                connectionStatusText = "กำลังเริ่มการเชื่อมต่อ...",
+                connectedSeconds = 0,
+                connectionLogs = listOf("เริ่มต้นกระบวนการอุโมงค์ VPN...", "โหมดการเชื่อมต่อ: ${config.connectionMode}")
+            )
+        }
+
+        connectJob = viewModelScope.launch {
+            // Step 1: Proxy / Payload Injection
+            delay(800)
+            _uiState.update {
+                it.copy(
+                    connectionStep = 1,
+                    connectionStatusText = "เชื่อมต่อ Proxy สำเร็จ",
+                    connectionLogs = it.connectionLogs + listOf(
+                        "ส่ง HTTP Payload ไปยัง $proxyDesc",
+                        "แทนที่แท็ก: [ua] -> Dalvik/2.1.0, [crlf] -> OK",
+                        "Proxy Response: HTTP/1.1 200 OK"
+                    )
+                )
+            }
+
+            // Step 2: SSH Server Handshake
+            delay(1000)
+            _uiState.update {
+                it.copy(
+                    connectionStep = 2,
+                    connectionStatusText = "กำลังเชื่อมต่อ SSH...",
+                    connectionLogs = it.connectionLogs + listOf(
+                        "Handshaked successfully to $sshDesc",
+                        "SSH-2.0-OpenSSH Protocol initialized",
+                        "Authenticate method: ${config.authMethod} (User: ${config.sshUsername.ifBlank { "vpnuser" }})",
+                        "Authentication Succeeded."
+                    )
+                )
+            }
+
+            // Step 3: Setting Network Routes
+            delay(900)
+            _uiState.update {
+                it.copy(
+                    connectionStep = 3,
+                    connectionStatusText = "กำลังตั้งค่าเส้นทางเครือข่าย...",
+                    connectionLogs = it.connectionLogs + listOf(
+                        "Allocating local forwarding port 1080",
+                        "Setting iptables and redsocks redirect rules",
+                        "Establishing secure VPN tunnel"
+                    )
+                )
+            }
+
+            // Step 4: Fully Connected
+            delay(700)
+            _uiState.update {
+                it.copy(
+                    vpnStatus = VpnStatus.CONNECTED,
+                    connectionStep = 3, // All 3 checkboxes ticked
+                    connectionStatusText = "เชื่อมต่อสำเร็จแล้ว!",
+                    connectionLogs = it.connectionLogs + listOf(
+                        "Entering interactive session.",
+                        "VPN Connected successfully! Ready to browse."
+                    )
+                )
+            }
+
+            // Start connected timer
+            startDurationTimer()
+        }
+    }
+
+    private fun startDurationTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            while (true) {
+                delay(1000)
+                _uiState.update { it.copy(connectedSeconds = it.connectedSeconds + 1) }
+            }
+        }
+    }
+
+    fun disconnectVpn() {
+        connectJob?.cancel()
+        timerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                vpnStatus = VpnStatus.DISCONNECTED,
+                connectionStep = 0,
+                connectionStatusText = "ตัดการเชื่อมต่อแล้ว",
+                connectedSeconds = 0,
+                connectionLogs = it.connectionLogs + listOf("User disconnected VPN tunnel.")
+            )
+        }
+        emitMessage("ตัดการเชื่อมต่อ VPN แล้ว")
     }
 
     fun testConnection() {
