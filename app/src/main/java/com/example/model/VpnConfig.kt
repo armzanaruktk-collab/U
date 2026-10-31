@@ -8,6 +8,7 @@ data class VpnConfig(
     // [mode]
     val connectionMode: Int = 1, // 0: SSH Direct, 1: Payload, 2: SSL/TLS (SNI), 3: Payload + SNI
     val autoReplace: Boolean = true, // 'y' or 'n'
+    val bypassMode: Boolean = true, // Safe Split Tunneling (ป้องกันเน็ตหลุดขณะเชื่อมต่อ)
     // [Payload]
     val payload: String = "GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]",
     val proxyIp: String = "",
@@ -32,7 +33,8 @@ data class VpnConfig(
         val sb = StringBuilder()
         sb.append("[mode]\n")
         sb.append("connection_mode = $connectionMode\n")
-        sb.append("auto_replace = ${if (autoReplace) "y" else "n"}\n\n")
+        sb.append("auto_replace = ${if (autoReplace) "y" else "n"}\n")
+        sb.append("bypass_mode = ${if (bypassMode) "y" else "n"}\n\n")
 
         sb.append("[Payload]\n")
         sb.append("payload = $payload\n")
@@ -173,6 +175,7 @@ data class VpnConfig(
             var currentSection = ""
             var mode = 1
             var autoReplace = true
+            var bypassMode = true
             var payload = ""
             var proxyIp = ""
             var proxyPort = ""
@@ -204,6 +207,7 @@ data class VpnConfig(
                         when (key) {
                             "connection_mode" -> mode = value.toIntOrNull() ?: 1
                             "auto_replace" -> autoReplace = value.equals("y", ignoreCase = true)
+                            "bypass_mode" -> bypassMode = value.equals("y", ignoreCase = true) || value.equals("true", ignoreCase = true)
                         }
                     }
                     "payload" -> {
@@ -239,6 +243,7 @@ data class VpnConfig(
                 name = profileName,
                 connectionMode = mode,
                 autoReplace = autoReplace,
+                bypassMode = bypassMode,
                 payload = payload,
                 proxyIp = proxyIp,
                 proxyPort = proxyPort,

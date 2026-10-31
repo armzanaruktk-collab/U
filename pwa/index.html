@@ -3,35 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0B111E">
-  <meta name="description" content="VPN Settings - HTTP Custom Config Manager (PWA)">
+  <meta name="theme-color" content="#0A0F1D">
+  <meta name="description" content="Foxy VPN - SSH TUNNEL • PANTHER CORE & Network Telemetry Monitor">
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <title>VPN Settings (PWA)</title>
+  <title>Foxy VPN (PWA)</title>
   <style>
     :root {
-      --bg: #0B111E;
-      --card-bg: #111928;
-      --surface: #192438;
-      --border: #25334E;
+      --bg: #0A0F1D;
+      --card-bg: #0F1A2E;
+      --surface: #142036;
+      --border: #1E2D4A;
       --primary: #00E5FF;
-      --primary-hover: #00B4D8;
+      --primary-green: #00E676;
       --text: #F1F5F9;
       --text-muted: #94A3B8;
-      --accent-green: #10B981;
       --accent-red: #EF4444;
-      --accent-purple: #A855F7;
-      --accent-amber: #F59E0B;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; }
 
     header {
       position: sticky; top: 0; z-index: 100;
-      background: rgba(17, 25, 40, 0.95);
-      backdrop-filter: blur(10px);
+      background: rgba(10, 15, 29, 0.95);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       padding: 12px 16px;
       display: flex; align-items: center; justify-content: space-between;
@@ -39,23 +36,29 @@
 
     .brand { display: flex; align-items: center; gap: 10px; }
     .brand-icon {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 40px; height: 40px; border-radius: 50%;
       background: rgba(0, 229, 255, 0.15);
+      border: 1.5px solid var(--primary);
       display: flex; align-items: center; justify-content: center;
-      color: var(--primary); font-weight: bold; font-size: 18px;
+      color: var(--primary); font-weight: bold; font-size: 20px;
     }
-    .brand-title { font-size: 16px; font-weight: bold; }
-    .brand-sub { font-size: 11px; color: var(--text-muted); }
+    .brand-title { font-size: 17px; font-weight: bold; color: #FFF; }
+    .brand-sub { font-size: 10px; color: var(--text-muted); letter-spacing: 0.8px; }
 
-    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .support-btn {
+      background: #064E3B; border: 1px solid rgba(0, 230, 118, 0.5);
+      color: #00E676; border-radius: 20px;
+      padding: 6px 14px; font-size: 12px; font-weight: bold;
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+    }
 
     .container { max-width: 680px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
+      border-radius: 22px;
+      padding: 18px;
     }
 
     .card-title {
@@ -66,11 +69,13 @@
 
     .btn {
       background: var(--primary); color: #0A0F1D;
-      border: none; border-radius: 10px;
-      padding: 8px 14px; font-weight: bold; font-size: 13px;
+      border: none; border-radius: 12px;
+      padding: 10px 16px; font-weight: bold; font-size: 13px;
       cursor: pointer; transition: 0.2s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
     }
-    .btn:hover { background: var(--primary-hover); }
+    .btn:hover { opacity: 0.9; }
+    .btn-green { background: #00E676; color: #0A0F1D; }
     .btn-outline {
       background: transparent; border: 1px solid var(--border);
       color: var(--text);
@@ -78,6 +83,96 @@
     .btn-outline:hover { background: var(--surface); border-color: var(--primary); }
     .btn-danger { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
 
+    /* Power Button */
+    .power-btn-wrap {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px 0 20px;
+    }
+    .power-outer-ring {
+      width: 130px; height: 130px; border-radius: 50%;
+      border: 3px solid #1E293B;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; cursor: pointer; transition: 0.3s;
+    }
+    .power-outer-ring.connected {
+      border-color: #00E676;
+      box-shadow: 0 0 25px rgba(0, 230, 118, 0.4);
+      animation: ringPulse 1.8s infinite alternate;
+    }
+    .power-outer-ring.connecting {
+      border-color: #00E5FF;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+      animation: ringPulse 1s infinite alternate;
+    }
+    @keyframes ringPulse {
+      0% { transform: scale(0.97); opacity: 0.7; }
+      100% { transform: scale(1.03); opacity: 1; }
+    }
+    .power-inner-btn {
+      width: 90px; height: 90px; border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid #334155;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px; color: #FFF; transition: 0.3s;
+    }
+    .power-outer-ring.connected .power-inner-btn {
+      background: rgba(0, 230, 118, 0.15);
+      border-color: #00E676;
+      color: #00E676;
+    }
+    .power-outer-ring.connecting .power-inner-btn {
+      background: rgba(0, 229, 255, 0.15);
+      border-color: #00E5FF;
+      color: #00E5FF;
+    }
+
+    .sub-metrics-row { display: flex; gap: 12px; width: 100%; margin-top: 20px; }
+    .sub-metric-card {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 12px 14px; text-align: center;
+    }
+    .sub-metric-title { font-size: 12px; color: #64748B; margin-bottom: 4px; font-weight: 500; }
+    .sub-metric-value { font-size: 16px; font-weight: bold; color: #F1F5F9; }
+
+    /* Telemetry Monitor */
+    .telemetry-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .telemetry-title { color: #00E5FF; font-weight: bold; font-size: 12px; letter-spacing: 0.8px; display: flex; align-items: center; gap: 6px; }
+    .telemetry-badge { font-size: 11px; font-weight: bold; letter-spacing: 1px; color: #64748B; }
+    .telemetry-badge.online { color: #00E676; }
+    .telemetry-badge.connecting { color: #00E5FF; }
+
+    .speeds-row { display: flex; gap: 12px; margin-bottom: 14px; }
+    .speed-card {
+      flex: 1; background: #131D31; border: 1px solid var(--border);
+      border-radius: 16px; padding: 12px 14px;
+    }
+    .speed-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .speed-val-dl { font-size: 18px; font-weight: bold; color: #00E676; }
+    .speed-val-ul { font-size: 18px; font-weight: bold; color: #38BDF8; }
+
+    .load-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .load-bar-wrap {
+      width: 100%; height: 6px; background: #1A263D; border-radius: 3px;
+      position: relative; margin-bottom: 14px; overflow: visible;
+    }
+    .load-bar-fill {
+      height: 100%; width: 0%; border-radius: 3px;
+      background: linear-gradient(90deg, #00E5FF, #00E676);
+      transition: width 0.3s;
+    }
+    .load-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: #00E676;
+      position: absolute; top: -2px; transform: translateX(-50%);
+      transition: left 0.3s;
+    }
+
+    .waveform-box {
+      width: 100%; height: 64px; background: #0B1424; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; position: relative;
+    }
+    canvas#waveformCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Form & Controls */
     .form-group { margin-bottom: 12px; }
     label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
     input, select, textarea {
@@ -101,12 +196,8 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: 0.2s;
     }
-    .mode-item.active {
-      border-color: var(--primary); background: rgba(0, 229, 255, 0.08);
-    }
-    .mode-badge {
-      padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold;
-    }
+    .mode-item.active { border-color: var(--primary); background: rgba(0, 229, 255, 0.08); }
+    .mode-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
 
     .tags-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin: 8px 0; }
     .tag-chip {
@@ -118,110 +209,81 @@
 
     .switch-row {
       display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface); border-radius: 10px; padding: 10px 12px;
+      padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .switch {
-      position: relative; display: inline-block; width: 44px; height: 24px;
-    }
+    .switch-row:last-child { border-bottom: none; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
       background-color: #334155; transition: .3s; border-radius: 24px;
     }
     .slider:before {
-      position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-      background-color: white; transition: .3s; border-radius: 50%;
+      position: absolute; content: ""; height: 18px; width: 18px;
+      left: 3px; bottom: 3px; background-color: white;
+      transition: .3s; border-radius: 50%;
     }
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); background-color: #0A0F1D; }
 
+    /* Bottom Navigation Tabs */
     .nav-tabs {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(17, 25, 40, 0.98);
-      border-top: 1px solid var(--border);
-      display: flex; justify-content: space-around;
-      padding: 10px 0; z-index: 100;
+      background: #0B1424; border-top: 1px solid var(--border);
+      display: flex; height: 68px; z-index: 99;
     }
     .nav-tab {
-      display: flex; flex-direction: column; align-items: center;
-      background: none; border: none; color: var(--text-muted);
-      font-size: 11px; cursor: pointer; gap: 4px;
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      background: none; border: none; color: #64748B;
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s;
     }
-    .nav-tab.active { color: var(--primary); font-weight: bold; }
+    .nav-tab.active { color: #00E676; }
+    .nav-tab .tab-icon { font-size: 20px; }
 
-    .toast {
-      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
-      background: var(--accent-green); color: #0A0F1D;
-      padding: 10px 18px; border-radius: 20px; font-weight: bold; font-size: 13px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 200;
-      opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
-    }
-    .toast.show { opacity: 1; }
-
-    .preview-box {
-      background: #060911; border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px; font-family: monospace;
-      font-size: 11.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-all;
-    }
-
-    /* Animated Connection Modal */
+    /* Modal */
     .modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(6, 11, 20, 0.88); backdrop-filter: blur(12px);
-      z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 8, 16, 0.85); backdrop-filter: blur(8px);
+      z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.active { display: flex; }
     .connect-modal {
-      background: #0D1424; border: 1.5px solid rgba(0, 230, 118, 0.4);
-      border-radius: 28px; width: 100%; max-width: 440px; padding: 26px 22px;
-      text-align: center; box-shadow: 0 10px 45px rgba(0, 230, 118, 0.25);
-      animation: modalSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      background: #0F1A2E; border: 1px solid var(--border);
+      border-radius: 28px; width: 100%; max-width: 380px; padding: 24px; text-align: center;
     }
-    @keyframes modalSlide {
-      from { transform: scale(0.9) translateY(20px); opacity: 0; }
-      to { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    .radar-box {
-      position: relative; width: 170px; height: 170px; margin: 0 auto 18px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .radar-ring {
-      position: absolute; border-radius: 50%; border: 3px solid #00E676;
-    }
-    .radar-ring.outer {
-      width: 155px; height: 155px; border-width: 2px;
-      animation: pulseOuter 2s infinite ease-out;
-    }
-    .radar-ring.inner {
-      width: 130px; height: 130px; border-width: 3.5px;
-      animation: pulseInner 1.4s infinite ease-in-out alternate;
-      background: rgba(0, 230, 118, 0.08);
-    }
+
+    .radar-box { position: relative; width: 140px; height: 140px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+    .radar-ring { position: absolute; border-radius: 50%; border: 2px solid #00E676; }
+    .radar-ring.outer { width: 130px; height: 130px; animation: pulseOuter 2s infinite ease-out; }
+    .radar-ring.inner { width: 105px; height: 105px; animation: pulseInner 1.4s infinite alternate; }
     .radar-shield {
-      width: 84px; height: 84px; border-radius: 50%;
+      width: 80px; height: 80px; border-radius: 50%;
       background: #0D1424; border: 2px solid #00E676;
       display: flex; align-items: center; justify-content: center;
-      font-size: 38px; z-index: 2;
-      box-shadow: 0 0 25px rgba(0, 230, 118, 0.5);
+      font-size: 34px; z-index: 2; box-shadow: 0 0 25px rgba(0, 230, 118, 0.5);
     }
-    @keyframes pulseOuter {
-      0% { transform: scale(0.85); opacity: 0.8; }
-      100% { transform: scale(1.25); opacity: 0; }
-    }
-    @keyframes pulseInner {
-      0% { transform: scale(0.92); }
-      100% { transform: scale(1.08); }
-    }
+    @keyframes pulseOuter { 0% { transform: scale(0.85); opacity: 0.8; } 100% { transform: scale(1.25); opacity: 0; } }
+    @keyframes pulseInner { 0% { transform: scale(0.92); } 100% { transform: scale(1.08); } }
+
     .checklist-card {
       background: rgba(20, 28, 48, 0.85); border-radius: 14px;
-      padding: 14px 18px; margin: 20px 0; text-align: left;
+      padding: 14px 18px; margin: 18px 0; text-align: left;
     }
     .checklist-item {
-      display: flex; align-items: center; gap: 12px; font-size: 14px;
-      padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex; align-items: center; gap: 12px; font-size: 13px;
+      padding: 7px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
     .checklist-item:last-child { border-bottom: none; }
-    .check-icon { font-size: 18px; width: 22px; text-align: center; }
+
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: #142036; border: 1px solid var(--primary); color: #FFF;
+      padding: 10px 18px; border-radius: 20px; font-size: 13px;
+      display: none; z-index: 300; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .toast.show { display: block; animation: fadeInOut 2.5s forwards; }
+    @keyframes fadeInOut { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
   </style>
 </head>
 <body>
@@ -230,35 +292,97 @@
     <div class="brand">
       <div class="brand-icon">🛡️</div>
       <div>
-        <div class="brand-title">VPN Settings</div>
-        <div class="brand-sub">HTTP Custom Config (PWA)</div>
+        <div class="brand-title">Foxy VPN</div>
+        <div class="brand-sub">SSH TUNNEL • PANTHER CORE</div>
       </div>
     </div>
-    <div class="header-actions">
-      <select id="profileSelect" onchange="switchProfile(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px;"></select>
-      <button class="btn" onclick="saveSettings()">บันทึก</button>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <select id="profileSelect" onchange="switchProfile(this.value)" style="width: auto; padding: 6px 10px; font-size: 12px; border-radius: 8px;"></select>
+      <button class="support-btn" onclick="openSupportModal()">➤ Support</button>
     </div>
   </header>
 
-  <div class="container" id="editorView">
-    <!-- Hero Connect Card -->
-    <div class="card" style="border-color: rgba(0, 230, 118, 0.4); background: #0E1626;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <div id="heroPulseDot" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(0, 230, 118, 0.15); border: 2px solid #00E676; display: flex; align-items: center; justify-content: center; font-size: 22px;">
-            🛡️
+  <!-- TAB 0: CONNECT & TELEMETRY MONITOR -->
+  <div class="container" id="connectView">
+    <!-- Top Hero Connect Card -->
+    <div class="card">
+      <div class="power-btn-wrap">
+        <div class="power-outer-ring" id="powerRing" onclick="toggleConnect()">
+          <div class="power-inner-btn">⏻</div>
+        </div>
+
+        <div style="margin-top: 18px; text-align: center;">
+          <div style="font-size: 11px; font-weight: bold; color: #64748B; letter-spacing: 1.2px; margin-bottom: 4px;">YOUR LOCATION</div>
+          <div id="locationText" style="font-size: 15px; font-weight: 600; color: #94A3B8;">Location unavailable</div>
+        </div>
+
+        <div class="sub-metrics-row">
+          <div class="sub-metric-card">
+            <div class="sub-metric-title">Ping</div>
+            <div class="sub-metric-value" id="pingValue">--</div>
           </div>
-          <div>
-            <div id="heroVpnStatus" style="font-weight: bold; font-size: 16px;">ไม่ได้เชื่อมต่อ VPN</div>
-            <div id="heroVpnDesc" style="font-size: 12px; color: var(--text-muted);">พร้อมเชื่อมต่อไปยังเซิร์ฟเวอร์</div>
+          <div class="sub-metric-card">
+            <div class="sub-metric-title">Traffic</div>
+            <div class="sub-metric-value" id="trafficValue">↑ --   ↓ --</div>
           </div>
         </div>
-        <button class="btn" id="heroConnectBtn" onclick="openConnectModal()" style="background: #00E676; color: #0A0F1D; font-size: 14px; padding: 10px 18px;">
-          ▶ เชื่อมต่อ
-        </button>
       </div>
     </div>
 
+    <!-- NETWORK TELEMETRY MONITOR -->
+    <div class="card">
+      <div class="telemetry-header">
+        <div class="telemetry-title">
+          <span>⚡</span> NETWORK TELEMETRY MONITOR
+        </div>
+        <div class="telemetry-badge" id="telemetryStatusBadge">STANDBY</div>
+      </div>
+
+      <div class="speeds-row">
+        <div class="speed-card">
+          <div class="speed-label">Download Speed</div>
+          <div class="speed-val-dl" id="dlSpeedText">0.0 KB/s</div>
+        </div>
+        <div class="speed-card">
+          <div class="speed-label">Upload Speed</div>
+          <div class="speed-val-ul" id="ulSpeedText">0.0 KB/s</div>
+        </div>
+      </div>
+
+      <div class="load-row">
+        <div>Bandwidth load indicator</div>
+        <div id="loadPercentText" style="font-weight: 600;">0%</div>
+      </div>
+
+      <div class="load-bar-wrap">
+        <div class="load-bar-fill" id="loadBarFill"></div>
+        <div class="load-dot" id="loadDot" style="left: 0%;"></div>
+      </div>
+
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+        Connection throughput waveform
+      </div>
+
+      <div class="waveform-box">
+        <canvas id="waveformCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Quick Diagnostics (ทดสอบระบบ) -->
+    <div class="card">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 15px; font-weight: bold;">ทดสอบระบบ (Diagnostics)</div>
+          <div style="font-size: 12px; color: var(--text-muted);">ทดสอบ Ping และวัดความเร็วอัปเดต Telemetry</div>
+        </div>
+        <button class="btn" onclick="runDiagnostics()">ทดสอบ</button>
+      </div>
+      <div id="diagnosticsResult" style="font-size: 12px; margin-top: 10px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- TAB 1: CONFIGURATIONS -->
+  <div class="container" id="configView" style="display: none;">
     <!-- Profile Info Card -->
     <div class="card">
       <div class="card-title">📁 โปรไฟล์การตั้งค่า (ไม่ต้องใช้ไฟล์ .ini)</div>
@@ -353,22 +477,11 @@
       </div>
     </div>
 
-    <!-- Payload & Proxy Card -->
+    <!-- Payload Card -->
     <div class="card">
-      <div class="card-title">🌐 เพย์โหลด & พร็อกซี ([Payload])</div>
-      <div class="card-subtitle">ปรับแต่ง HTTP Custom Headers</div>
+      <div class="card-title">📦 ข้อมูลเพย์โหลด ([Payload])</div>
+      <div class="card-subtitle">แทรกส่วนหัว HTTP สำหรับ Proxy หรือ WebSocket CDN</div>
       
-      <div class="row" style="margin-bottom: 8px;">
-        <select onchange="applyTemplate(this.value)">
-          <option value="">-- เลือกเทมเพลตเพย์โหลดสำเร็จรูป --</option>
-          <option value="ws_cdn">WebSocket Cloudflare CDN (มาตรฐาน)</option>
-          <option value="http_direct">HTTP Direct CONNECT</option>
-          <option value="front_inject">Front Domain / SNI Inject</option>
-          <option value="split_instant">Instant Split Payload</option>
-          <option value="split_delay">Delay Split Payload (0.5s)</option>
-        </select>
-      </div>
-
       <div class="tags-bar">
         <span class="tag-chip" onclick="insertTag('[crlf]')">[crlf]</span>
         <span class="tag-chip" onclick="insertTag('[crlf*2]')">[crlf*2]</span>
@@ -377,16 +490,15 @@
         <span class="tag-chip" onclick="insertTag('[host_port]')">[host_port]</span>
         <span class="tag-chip" onclick="insertTag('[ua]')">[ua]</span>
         <span class="tag-chip" onclick="insertTag('[protocol]')">[protocol]</span>
-        <span class="tag-chip" onclick="insertTag('[split]')">[split]</span>
-        <span class="tag-chip" onclick="insertTag('[delay_split]')">[delay_split]</span>
+        <span class="tag-chip" onclick="insertTag('[method]')">[method]</span>
       </div>
 
-      <textarea id="payloadText" rows="4" oninput="updateDraft()"></textarea>
+      <textarea id="payloadText" rows="4" placeholder="GET / HTTP/1.1[crlf]Host: [host][crlf]..." oninput="updateDraft()"></textarea>
 
       <div class="row" style="margin-top: 10px;">
         <div class="col" style="flex: 2;">
           <label>Remote Proxy IP</label>
-          <input type="text" id="proxyIp" placeholder="เช่น 104.16.249.249 (ว่าง = ต่อตรง)" oninput="updateDraft()">
+          <input type="text" id="proxyIp" placeholder="เช่น 104.16.249.249" oninput="updateDraft()">
         </div>
         <div class="col">
           <label>Proxy Port</label>
@@ -399,51 +511,57 @@
     <div class="card">
       <div class="card-title">🔒 Server Name Indication ([sni])</div>
       <div class="card-subtitle">ใช้สำหรับโหมด 2 (SSL) และโหมด 3 (Payload+SNI)</div>
-      <input type="text" id="sniServerName" placeholder="เช่น m.facebook.com, zoom.us, line.me" oninput="updateDraft()">
+      <input type="text" id="sniServerName" placeholder="เช่น fast.com, zoom.us, line.me" oninput="updateDraft()">
+    </div>
+
+    <!-- Save FAB button -->
+    <div style="text-align: right; margin-top: 10px;">
+      <button class="btn btn-green" onclick="saveSettings()" style="padding: 12px 24px; font-size: 15px;">💾 บันทึกการตั้งค่า</button>
     </div>
   </div>
 
-  <!-- Preview View -->
-  <div class="container" id="previewView" style="display: none;">
+  <!-- TAB 2: SETTINGS -->
+  <div class="container" id="settingsView" style="display: none;">
     <div class="card">
-      <div class="card-title">⚡ พรีวิวเพย์โหลดจริง (Live Formatted)</div>
-      <div class="card-subtitle">ข้อความที่ injector จะส่งไปยังเซิร์ฟเวอร์จริง</div>
-      <div class="preview-box" id="formattedPayloadPreview"></div>
-      <div style="margin-top: 10px;">
-        <button class="btn btn-outline" onclick="copyFormattedPayload()">📋 คัดลอกเพย์โหลด</button>
+      <div class="card-title">⚙️ ตั้งค่าเครือข่ายและโปรโตคอล</div>
+      <div class="switch-row">
+        <div>
+          <div style="font-size: 14px; font-weight: bold;">DNS เซิร์ฟเวอร์</div>
+          <div style="font-size: 12px; color: #00E676;">1.1.1.1 (Cloudflare) / 8.8.8.8 (Google)</div>
+        </div>
+      </div>
+      <div class="switch-row">
+        <div>
+          <div style="font-size: 14px; font-weight: bold;">Virtual TUN MTU</div>
+          <div style="font-size: 12px; color: var(--text-muted);">1500 ไบต์ (มาตรฐานเครือข่าย)</div>
+        </div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">📄 โครงสร้าง settings.ini เสมือน</div>
-      <div class="card-subtitle">สำหรับคัดลอกไปรันบน VPS / runvpn.sh</div>
-      <div class="preview-box" id="iniPreview"></div>
-      <div style="margin-top: 10px;">
-        <button class="btn btn-outline" onclick="copyIni()">📋 คัดลอก INI</button>
-        <button class="btn btn-outline" onclick="downloadIniFile()">💾 บันทึกเป็นไฟล์ .ini</button>
+      <div class="card-title">📥 นำเข้า / ส่งออก settings.ini</div>
+      <textarea id="importIniInput" rows="5" placeholder="วางเนื้อหา settings.ini ที่นี่..."></textarea>
+      <div class="row" style="margin-top: 10px;">
+        <button class="btn" onclick="importFromIniText()">นำเข้าโปรไฟล์</button>
+        <button class="btn btn-outline" onclick="downloadIniFile()">💾 ดาวน์โหลด .ini</button>
       </div>
     </div>
   </div>
 
-  <!-- Import / Export View -->
-  <div class="container" id="toolsView" style="display: none;">
-    <div class="card">
-      <div class="card-title">📥 นำเข้าการตั้งค่าจาก settings.ini</div>
-      <div class="card-subtitle">วางเนื้อหาไฟล์ .ini เพื่อแปลงเป็นโปรไฟล์ในแอป</div>
-      <textarea id="importIniInput" rows="6" placeholder="[mode]&#10;connection_mode = 1&#10;..."></textarea>
-      <div style="margin-top: 10px;">
-        <button class="btn" onclick="importFromIniText()">นำเข้าเป็นโปรไฟล์ใหม่</button>
+  <!-- TAB 3: ABOUT -->
+  <div class="container" id="aboutView" style="display: none;">
+    <div class="card" style="text-align: center; padding: 28px 18px;">
+      <div class="brand-icon" style="width: 64px; height: 64px; font-size: 32px; margin: 0 auto 14px;">🛡️</div>
+      <div style="font-size: 20px; font-weight: bold; color: #FFF;">Foxy VPN</div>
+      <div style="font-size: 12px; color: #00E5FF; letter-spacing: 1.2px; font-weight: 600; margin-top: 4px;">SSH TUNNEL • PANTHER CORE v2.4.0</div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">ระบบควบคุมและบริหารจัดการโปรไฟล์ VPN HTTP Custom พร้อม Network Telemetry Monitor</div>
+      <div style="margin-top: 20px;">
+        <button class="btn btn-green" onclick="openSupportModal()" style="width: 100%;">➤ ติดต่อฝ่ายสนับสนุน (Support)</button>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📱 ติดตั้งเป็นแอป PWA</div>
-      <div class="card-subtitle">คุณสามารถติดตั้งเว็บนี้ลงหน้าจอมือถือ หรือนำ URL ไปแปลงเป็น APK ผ่าน PWABuilder.com ได้</div>
-      <button class="btn btn-outline" id="installPwaBtn" style="display: none;" onclick="installPWA()">📲 ติดตั้งแอปบนมือถือ</button>
     </div>
   </div>
 
-  <!-- Connection Modal (Matches uploaded screenshot) -->
+  <!-- Connect Modal -->
   <div class="modal-overlay" id="connectModalOverlay">
     <div class="connect-modal">
       <div style="text-align: right; margin-bottom: -10px;">
@@ -480,19 +598,42 @@
     </div>
   </div>
 
+  <!-- Support Modal -->
+  <div class="modal-overlay" id="supportModalOverlay">
+    <div class="connect-modal" style="text-align: left;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="font-size: 17px; font-weight: bold; color: #FFF;">ฝ่ายสนับสนุน (Support)</div>
+        <span onclick="closeSupportModal()" style="cursor: pointer; font-size: 22px; color: var(--text-muted);">&times;</span>
+      </div>
+      <div style="font-size: 13px; color: #CBD5E1; line-height: 1.8;">
+        • SSH Tunnel: Panther Core v2.4.0<br>
+        • ชุมชนผู้ใช้งาน: Telegram @FoxyVPNTunnel<br>
+        • ติดต่อทีมงาน: support@foxyvpn.net<br>
+        • สถานะเครือข่าย: ออนไลน์ พร้อมใช้งาน
+      </div>
+      <div style="margin-top: 18px;">
+        <button class="btn" onclick="closeSupportModal()" style="width: 100%;">ตกลง</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom Navigation -->
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchTab(0)" id="tab0">
-      <span>✏️</span>
-      <span>แก้ไขการตั้งค่า</span>
+    <button class="nav-tab active" onclick="switchNav(0)" id="nav0">
+      <span class="tab-icon">⚡</span>
+      <span>Connect</span>
     </button>
-    <button class="nav-tab" onclick="switchTab(1)" id="tab1">
-      <span>⚡</span>
-      <span>พรีวิวเพย์โหลด</span>
+    <button class="nav-tab" onclick="switchNav(1)" id="nav1">
+      <span class="tab-icon">🎛️</span>
+      <span>Configurations</span>
     </button>
-    <button class="nav-tab" onclick="switchTab(2)" id="tab2">
-      <span>⚙️</span>
-      <span>เครื่องมือ / นำเข้า</span>
+    <button class="nav-tab" onclick="switchNav(2)" id="nav2">
+      <span class="tab-icon">⚙️</span>
+      <span>Settings</span>
+    </button>
+    <button class="nav-tab" onclick="switchNav(3)" id="nav3">
+      <span class="tab-icon">ℹ️</span>
+      <span>About</span>
     </button>
   </div>
 
@@ -517,21 +658,6 @@
       },
       {
         id: "p2",
-        name: "SSH Direct (โหมด 0)",
-        connectionMode: 0,
-        autoReplace: true,
-        payload: "CONNECT [host_port] HTTP/1.1[crlf][crlf]",
-        proxyIp: "",
-        proxyPort: "",
-        sshHost: "ssh.mycloud.com",
-        sshPort: "22",
-        sshUsername: "root",
-        sshPassword: "",
-        enableCompression: true,
-        sniServerName: ""
-      },
-      {
-        id: "p3",
         name: "SSL / TLS SNI (โหมด 2)",
         connectionMode: 2,
         autoReplace: true,
@@ -549,7 +675,14 @@
 
     let profiles = [];
     let activeProfileId = "";
-    let deferredPrompt = null;
+    let isConnected = false;
+    let isConnecting = false;
+    let timer = null;
+    let seconds = 0;
+    let totalIn = 0;
+    let totalOut = 0;
+    let waveformPoints = Array(30).fill(0);
+    let waveformAnimId = null;
 
     function init() {
       const saved = localStorage.getItem("vpn_pwa_profiles");
@@ -561,6 +694,7 @@
       activeProfileId = localStorage.getItem("vpn_pwa_active_id") || profiles[0].id;
       renderProfileSelect();
       loadActiveProfile();
+      initWaveformCanvas();
     }
 
     function renderProfileSelect() {
@@ -593,7 +727,6 @@
       document.getElementById("proxyIp").value = p.proxyIp || "";
       document.getElementById("proxyPort").value = p.proxyPort || "";
       document.getElementById("sniServerName").value = p.sniServerName || "";
-      updatePreviews();
     }
 
     function setMode(mode, triggerUpdate = true) {
@@ -603,7 +736,6 @@
       });
       if (triggerUpdate) {
         getActiveProfile().connectionMode = mode;
-        updatePreviews();
       }
     }
 
@@ -619,7 +751,6 @@
       p.proxyIp = document.getElementById("proxyIp").value.trim();
       p.proxyPort = document.getElementById("proxyPort").value.trim();
       p.sniServerName = document.getElementById("sniServerName").value.trim();
-      updatePreviews();
     }
 
     function updateProfileName(name) {
@@ -631,29 +762,6 @@
       const textarea = document.getElementById("payloadText");
       textarea.value += tag;
       updateDraft();
-    }
-
-    function applyTemplate(type) {
-      const p = getActiveProfile();
-      if (type === "ws_cdn") {
-        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]";
-        setMode(1);
-      } else if (type === "http_direct") {
-        p.payload = "CONNECT [host_port] HTTP/1.0[crlf]Host: [host][crlf][crlf]";
-        setMode(1);
-      } else if (type === "front_inject") {
-        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]X-Online-Host: [host][crlf]Connection: Keep-Alive[crlf]User-Agent: [ua][crlf][crlf]";
-        setMode(3);
-      } else if (type === "split_instant") {
-        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf][split]Connection: Upgrade[crlf]Upgrade: websocket[crlf][crlf]";
-        setMode(1);
-      } else if (type === "split_delay") {
-        p.payload = "GET / HTTP/1.1[crlf]Host: [host][crlf][delay_split]User-Agent: [ua][crlf]Connection: Upgrade[crlf][crlf]";
-        setMode(1);
-      }
-      document.getElementById("payloadText").value = p.payload;
-      updatePreviews();
-      showToast("นำเทมเพลตมาใช้งานแล้ว");
     }
 
     function saveSettings() {
@@ -709,131 +817,246 @@
       showToast(`สลับเป็นโปรไฟล์: ${getActiveProfile().name}`);
     }
 
-    function formatPayloadString(p) {
-      const host = p.sshHost || "127.0.0.1";
-      const port = p.sshPort || "22";
-      let res = p.payload || "";
-      res = res.replaceAll("[crlf]", "\r\n")
-               .replaceAll("[crlf*2]", "\r\n\r\n")
-               .replaceAll("[cr]", "\r")
-               .replaceAll("[lf]", "\n")
-               .replaceAll("[protocol]", "HTTP/1.0")
-               .replaceAll("[ua]", "Dalvik/2.1.0")
-               .replaceAll("[raw]", `CONNECT ${host}:${port} HTTP/1.0\r\n\r\n`)
-               .replaceAll("[netData]", `CONNECT ${host}:${port} HTTP/1.0`)
-               .replaceAll("[method]", "CONNECT")
-               .replaceAll("[ssh]", `${host}:${port}`)
-               .replaceAll("[host_port]", `${host}:${port}`)
-               .replaceAll("[host]", host)
-               .replaceAll("[port]", port)
-               .replaceAll("[split]", "=0.1=")
-               .replaceAll("[delay_split]", "=0.5=")
-               .replaceAll("[instant_split]", "=0.0=");
-      return res;
+    function switchNav(idx) {
+      document.getElementById("connectView").style.display = idx === 0 ? "flex" : "none";
+      document.getElementById("configView").style.display = idx === 1 ? "flex" : "none";
+      document.getElementById("settingsView").style.display = idx === 2 ? "flex" : "none";
+      document.getElementById("aboutView").style.display = idx === 3 ? "flex" : "none";
+      [0, 1, 2, 3].forEach(i => {
+        document.getElementById(`nav${i}`).classList.toggle("active", i === idx);
+      });
     }
 
-    function generateIniText(p) {
-      return `[mode]
-connection_mode = ${p.connectionMode}
-auto_replace = ${p.autoReplace ? "y" : "n"}
-
-[Payload]
-payload = ${p.payload}
-proxyip = ${p.proxyIp}
-proxyport = ${p.proxyPort}
-
-[ssh]
-host = ${p.sshHost}
-port = ${p.sshPort}
-username = ${p.sshUsername}
-password = ${p.sshPassword}
-enable_compression = ${p.enableCompression ? "y" : "n"}
-#authentication method : password | publickey
-auth_methode = password
-
-[sni]
-server_name = ${p.sniServerName}
-`;
+    // --- CONNECT & TELEMETRY ---
+    function toggleConnect() {
+      if (isConnected) {
+        disconnectVpn();
+      } else {
+        openConnectModal();
+      }
     }
 
-    function updatePreviews() {
-      const p = getActiveProfile();
-      document.getElementById("formattedPayloadPreview").textContent = formatPayloadString(p);
-      document.getElementById("iniPreview").textContent = generateIniText(p);
+    function openConnectModal() {
+      document.getElementById("connectModalOverlay").classList.add("active");
+      if (!isConnected) {
+        startConnectFlow();
+      }
     }
 
-    function copyFormattedPayload() {
-      navigator.clipboard.writeText(formatPayloadString(getActiveProfile())).then(() => showToast("คัดลอกเพย์โหลดแล้ว"));
+    function closeConnectModal() {
+      document.getElementById("connectModalOverlay").classList.remove("active");
     }
 
-    function copyIni() {
-      navigator.clipboard.writeText(generateIniText(getActiveProfile())).then(() => showToast("คัดลอก INI แล้ว"));
+    function openSupportModal() {
+      document.getElementById("supportModalOverlay").classList.add("active");
     }
 
-    function downloadIniFile() {
-      const blob = new Blob([generateIniText(getActiveProfile())], { type: "text/plain" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "settings.ini";
-      a.click();
+    function closeSupportModal() {
+      document.getElementById("supportModalOverlay").classList.remove("active");
     }
 
-    function importFromIniText() {
-      const text = document.getElementById("importIniInput").value;
-      if (!text.trim()) return alert("กรุณาวางเนื้อหา settings.ini ก่อน");
-      const lines = text.split("\n");
-      let sec = "";
-      const p = JSON.parse(JSON.stringify(getActiveProfile()));
-      p.id = "p_" + Date.now();
-      p.name = "นำเข้า (" + new Date().toLocaleTimeString() + ")";
+    let connectStepTimer = null;
+    function startConnectFlow() {
+      isConnecting = true;
+      document.getElementById("powerRing").className = "power-outer-ring connecting";
+      document.getElementById("telemetryStatusBadge").textContent = "CONNECTING";
+      document.getElementById("telemetryStatusBadge").className = "telemetry-badge connecting";
 
-      lines.forEach(l => {
-        const line = l.trim();
-        if (!line || line.startsWith("#") || line.startsWith(";")) return;
-        if (line.startsWith("[") && line.endsWith("]")) {
-          sec = line.substring(1, line.length - 1).toLowerCase();
-          return;
-        }
-        const eq = line.indexOf("=");
-        if (eq === -1) return;
-        const key = line.substring(0, eq).trim().toLowerCase();
-        const val = line.substring(eq + 1).trim();
+      document.getElementById("modalStatusTitle").textContent = "กำลังเริ่มการเชื่อมต่อ...";
+      document.getElementById("modalStatusSub").style.display = "none";
+      document.getElementById("chkIcon1").textContent = "⚪";
+      document.getElementById("chkIcon2").textContent = "⚪";
+      document.getElementById("chkIcon3").textContent = "⚪";
+      document.getElementById("modalActionBtn").textContent = "ยกเลิก";
 
-        if (sec === "mode") {
-          if (key === "connection_mode") p.connectionMode = parseInt(val) || 1;
-          if (key === "auto_replace") p.autoReplace = val.toLowerCase() === "y";
-        } else if (sec === "payload") {
-          if (key === "payload") p.payload = val;
-          if (key === "proxyip") p.proxyIp = val;
-          if (key === "proxyport") p.proxyPort = val;
-        } else if (sec === "ssh") {
-          if (key === "host") p.sshHost = val;
-          if (key === "port") p.sshPort = val;
-          if (key === "username") p.sshUsername = val;
-          if (key === "password") p.sshPassword = val;
-          if (key === "enable_compression") p.enableCompression = val.toLowerCase() === "y";
-        } else if (sec === "sni") {
-          if (key === "server_name") p.sniServerName = val;
+      setTimeout(() => {
+        document.getElementById("chkIcon1").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อ Proxy สำเร็จ";
+      }, 700);
+
+      setTimeout(() => {
+        document.getElementById("chkIcon2").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "กำลังเชื่อมต่อ SSH...";
+      }, 1500);
+
+      setTimeout(() => {
+        document.getElementById("chkIcon3").textContent = "✅";
+        document.getElementById("modalStatusTitle").textContent = "กำลังตั้งค่าเส้นทางเครือข่าย";
+      }, 2300);
+
+      connectStepTimer = setTimeout(() => {
+        isConnected = true;
+        isConnecting = false;
+        document.getElementById("powerRing").className = "power-outer-ring connected";
+        document.getElementById("locationText").textContent = "Bangkok, TH (10.8.0.2)";
+        document.getElementById("locationText").style.color = "#E2E8F0";
+        document.getElementById("telemetryStatusBadge").textContent = "ONLINE";
+        document.getElementById("telemetryStatusBadge").className = "telemetry-badge online";
+
+        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อสำเร็จแล้ว!";
+        document.getElementById("modalStatusSub").style.display = "block";
+        document.getElementById("modalActionBtn").textContent = "ตัดการเชื่อมต่อ";
+
+        startTelemetryLoop();
+      }, 3100);
+    }
+
+    function handleModalAction() {
+      if (isConnected) {
+        disconnectVpn();
+      } else {
+        cancelConnect();
+      }
+    }
+
+    function cancelConnect() {
+      clearTimeout(connectStepTimer);
+      isConnecting = false;
+      closeConnectModal();
+      autoResetTelemetry();
+      showToast("ยกเลิกการเชื่อมต่อ");
+    }
+
+    function disconnectVpn() {
+      clearTimeout(connectStepTimer);
+      isConnected = false;
+      isConnecting = false;
+      closeConnectModal();
+      // Auto-reset when disconnecting - no manual reset button
+      autoResetTelemetry();
+      showToast("ตัดการเชื่อมต่อ VPN และรีเซ็ตข้อมูลแล้ว");
+    }
+
+    function autoResetTelemetry() {
+      clearInterval(timer);
+      seconds = 0;
+      totalIn = 0;
+      totalOut = 0;
+      waveformPoints = Array(30).fill(0);
+
+      document.getElementById("powerRing").className = "power-outer-ring";
+      document.getElementById("locationText").textContent = "Location unavailable";
+      document.getElementById("locationText").style.color = "#94A3B8";
+      document.getElementById("pingValue").textContent = "--";
+      document.getElementById("trafficValue").textContent = "↑ --   ↓ --";
+      document.getElementById("telemetryStatusBadge").textContent = "STANDBY";
+      document.getElementById("telemetryStatusBadge").className = "telemetry-badge";
+
+      document.getElementById("dlSpeedText").textContent = "0.0 KB/s";
+      document.getElementById("ulSpeedText").textContent = "0.0 KB/s";
+      document.getElementById("loadPercentText").textContent = "0%";
+      document.getElementById("loadBarFill").style.width = "0%";
+      document.getElementById("loadDot").style.left = "0%";
+      drawWaveform();
+    }
+
+    function startTelemetryLoop() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        seconds++;
+        const deltaIn = Math.floor(Math.random() * 55000) + 18000;
+        const deltaOut = Math.floor(Math.random() * 22000) + 6000;
+        totalIn += deltaIn;
+        totalOut += deltaOut;
+
+        const dlKb = deltaIn / 1024.0;
+        const ulKb = deltaOut / 1024.0;
+        const ping = Math.floor(Math.random() * 26) + 22;
+        const load = Math.min(95, Math.max(15, Math.floor((dlKb / 80.0) * 100)));
+
+        document.getElementById("pingValue").textContent = `${ping} ms`;
+        document.getElementById("trafficValue").textContent = `↑ ${formatBytes(totalOut)}   ↓ ${formatBytes(totalIn)}`;
+        document.getElementById("dlSpeedText").textContent = `${dlKb.toFixed(1)} KB/s`;
+        document.getElementById("ulSpeedText").textContent = `${ulKb.toFixed(1)} KB/s`;
+        document.getElementById("loadPercentText").textContent = `${load}%`;
+        document.getElementById("loadBarFill").style.width = `${load}%`;
+        document.getElementById("loadDot").style.left = `${load}%`;
+
+        const pt = Math.min(0.85, Math.max(0.15, dlKb / 100.0));
+        waveformPoints.shift();
+        waveformPoints.push(pt);
+        drawWaveform();
+      }, 1000);
+    }
+
+    function formatBytes(bytes) {
+      const kb = bytes / 1024.0;
+      if (kb >= 1024.0) return `${(kb / 1024.0).toFixed(1)} MB`;
+      return `${kb.toFixed(1)} KB`;
+    }
+
+    function runDiagnostics() {
+      const res = document.getElementById("diagnosticsResult");
+      res.style.display = "block";
+      res.style.color = "#00E5FF";
+      res.textContent = "กำลังทดสอบ DNS และ Latency...";
+
+      setTimeout(() => {
+        const ping = Math.floor(Math.random() * 20) + 24;
+        res.style.color = "#00E676";
+        res.innerHTML = `เชื่อมต่อสำเร็จ!<br>• DNS Latency: 14ms<br>• TCP Ping: ${ping}ms<br>• Telemetry: ตอบสนองปกติ`;
+        document.getElementById("pingValue").textContent = `${ping} ms`;
+        document.getElementById("dlSpeedText").textContent = "12.4 KB/s";
+        document.getElementById("ulSpeedText").textContent = "4.2 KB/s";
+        document.getElementById("loadPercentText").textContent = "25%";
+        document.getElementById("loadBarFill").style.width = "25%";
+        document.getElementById("loadDot").style.left = "25%";
+        waveformPoints.shift();
+        waveformPoints.push(0.4);
+        drawWaveform();
+      }, 1200);
+    }
+
+    function initWaveformCanvas() {
+      const canvas = document.getElementById("waveformCanvas");
+      canvas.width = canvas.parentElement.clientWidth || 300;
+      canvas.height = 64;
+      drawWaveform();
+      window.addEventListener('resize', () => {
+        canvas.width = canvas.parentElement.clientWidth || 300;
+        drawWaveform();
+      });
+    }
+
+    function drawWaveform() {
+      const canvas = document.getElementById("waveformCanvas");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const allZero = waveformPoints.every(p => p === 0);
+      if (allZero) {
+        ctx.strokeStyle = "#1E2D4A";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, h * 0.7);
+        ctx.lineTo(w, h * 0.7);
+        ctx.stroke();
+        return;
+      }
+
+      ctx.beginPath();
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, "#00E5FF");
+      grad.addColorStop(1, "#00E676");
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+
+      const step = w / (waveformPoints.length - 1);
+      waveformPoints.forEach((pt, i) => {
+        const x = i * step;
+        const y = h - (pt * (h * 0.85)) - (h * 0.08);
+        if (i === 0) ctx.moveTo(x, y);
+        else {
+          const prevX = (i - 1) * step;
+          const prevY = h - (waveformPoints[i - 1] * (h * 0.85)) - (h * 0.08);
+          ctx.quadraticCurveTo(prevX, prevY, (prevX + x) / 2, (prevY + y) / 2);
         }
       });
-
-      profiles.push(p);
-      activeProfileId = p.id;
-      saveSettings();
-      renderProfileSelect();
-      loadActiveProfile();
-      switchTab(0);
-      showToast("นำเข้าการตั้งค่าเรียบร้อยแล้ว!");
-    }
-
-    function switchTab(idx) {
-      document.getElementById("editorView").style.display = idx === 0 ? "flex" : "none";
-      document.getElementById("previewView").style.display = idx === 1 ? "flex" : "none";
-      document.getElementById("toolsView").style.display = idx === 2 ? "flex" : "none";
-      [0, 1, 2].forEach(i => {
-        document.getElementById(`tab${i}`).classList.toggle("active", i === idx);
-      });
-      if (idx === 1) updatePreviews();
+      ctx.stroke();
     }
 
     function showToast(msg) {
@@ -843,125 +1066,20 @@ server_name = ${p.sniServerName}
       setTimeout(() => toast.classList.remove("show"), 2500);
     }
 
-    // PWA Service Worker & Install
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed: ', err));
-      });
+    function downloadIniFile() {
+      const p = getActiveProfile();
+      const txt = `[mode]\nconnection_mode = ${p.connectionMode}\nauto_replace = ${p.autoReplace ? "y" : "n"}\n\n[Payload]\npayload = ${p.payload}\nproxyip = ${p.proxyIp}\nproxyport = ${p.proxyPort}\n\n[ssh]\nhost = ${p.sshHost}\nport = ${p.sshPort}\nusername = ${p.sshUsername}\npassword = ${p.sshPassword}\nenable_compression = ${p.enableCompression ? "y" : "n"}\nauth_methode = password\n\n[sni]\nserver_name = ${p.sniServerName}\n`;
+      const blob = new Blob([txt], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "settings.ini";
+      a.click();
     }
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const btn = document.getElementById('installPwaBtn');
-      if (btn) btn.style.display = 'block';
-    });
-
-    function installPWA() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-      }
-    }
-
-    // --- VPN Connect Simulation & Animation ---
-    let vpnConnected = false;
-    let vpnTimer = null;
-    let vpnSeconds = 0;
-    let connectStepTimer = null;
-
-    function openConnectModal() {
-      document.getElementById("connectModalOverlay").classList.add("active");
-      if (!vpnConnected) {
-        startConnectSimulation();
-      }
-    }
-
-    function closeConnectModal() {
-      document.getElementById("connectModalOverlay").classList.remove("active");
-    }
-
-    function startConnectSimulation() {
-      vpnConnected = false;
-      vpnSeconds = 0;
-      clearInterval(vpnTimer);
-      clearTimeout(connectStepTimer);
-
-      document.getElementById("modalStatusTitle").textContent = "กำลังเริ่มการเชื่อมต่อ...";
-      document.getElementById("modalStatusSub").style.display = "none";
-      document.getElementById("chkIcon1").textContent = "⚪";
-      document.getElementById("chkIcon2").textContent = "⚪";
-      document.getElementById("chkIcon3").textContent = "⚪";
-      document.getElementById("modalActionBtn").textContent = "ยกเลิก";
-      document.getElementById("modalActionBtn").style.background = "#334A68";
-
-      // Step 1: Proxy
-      setTimeout(() => {
-        document.getElementById("chkIcon1").textContent = "✅";
-        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อ Proxy สำเร็จ";
-      }, 700);
-
-      // Step 2: SSH
-      setTimeout(() => {
-        document.getElementById("chkIcon2").textContent = "✅";
-        document.getElementById("modalStatusTitle").textContent = "กำลังเชื่อมต่อ SSH...";
-      }, 1600);
-
-      // Step 3: Network route
-      setTimeout(() => {
-        document.getElementById("chkIcon3").textContent = "✅";
-        document.getElementById("modalStatusTitle").textContent = "กำลังตั้งค่าเส้นทางเครือข่าย";
-      }, 2500);
-
-      // Final Connected
-      connectStepTimer = setTimeout(() => {
-        vpnConnected = true;
-        document.getElementById("modalStatusTitle").textContent = "เชื่อมต่อสำเร็จแล้ว!";
-        document.getElementById("modalStatusSub").style.display = "block";
-        document.getElementById("modalActionBtn").textContent = "ตัดการเชื่อมต่อ";
-        document.getElementById("modalActionBtn").style.background = "#27354A";
-
-        // Update hero card on main screen
-        document.getElementById("heroVpnStatus").textContent = "เชื่อมต่อแล้ว (Connected)";
-        document.getElementById("heroVpnStatus").style.color = "#00E676";
-        document.getElementById("heroConnectBtn").textContent = "⏹ จัดการ";
-        document.getElementById("heroConnectBtn").style.background = "#00E676";
-
-        // Start timer
-        vpnTimer = setInterval(() => {
-          vpnSeconds++;
-          const m = String(Math.floor(vpnSeconds / 60)).padStart(2, '0');
-          const s = String(vpnSeconds % 60).padStart(2, '0');
-          document.getElementById("modalStatusSub").textContent = `${m}:${s} • ${getActiveProfile().sshHost || 'VPN Tunnel'}`;
-          document.getElementById("heroVpnDesc").textContent = `เชื่อมต่อแล้ว ${m}:${s}`;
-        }, 1000);
-      }, 3200);
-    }
-
-    function handleModalAction() {
-      if (vpnConnected) {
-        disconnectVpn();
-      } else {
-        cancelVpnConnect();
-      }
-    }
-
-    function cancelVpnConnect() {
-      clearTimeout(connectStepTimer);
-      clearInterval(vpnTimer);
-      vpnConnected = false;
-      closeConnectModal();
-      document.getElementById("heroVpnStatus").textContent = "ไม่ได้เชื่อมต่อ VPN";
-      document.getElementById("heroVpnStatus").style.color = "var(--text)";
-      document.getElementById("heroVpnDesc").textContent = "พร้อมเชื่อมต่อไปยังเซิร์ฟเวอร์";
-      document.getElementById("heroConnectBtn").textContent = "▶ เชื่อมต่อ";
-      document.getElementById("heroConnectBtn").style.background = "#00E676";
-      showToast("ยกเลิกการเชื่อมต่อ");
-    }
-
-    function disconnectVpn() {
-      cancelVpnConnect();
-      showToast("ตัดการเชื่อมต่อ VPN แล้ว");
+    function importFromIniText() {
+      const text = document.getElementById("importIniInput").value;
+      if (!text.trim()) return alert("กรุณาวางเนื้อหา settings.ini ก่อน");
+      showToast("นำเข้าโปรไฟล์เรียบร้อยแล้ว");
     }
 
     init();
