@@ -1,13 +1,16 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.net.VpnService
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.VpnConfigRepository
 import com.example.model.VpnConfig
+import com.example.vpn.CustomVpnService
+import com.example.vpn.VpnStatusManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -57,6 +60,7 @@ data class ConfigUiState(
 
 sealed class UiEvent {
     data class ShowToast(val message: String) : UiEvent()
+    data class RequestVpnPermission(val intent: Intent) : UiEvent()
 }
 
 class VpnConfigViewModel(application: Application) : AndroidViewModel(application) {
@@ -69,10 +73,8 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
     private val _events = MutableSharedFlow<UiEvent>()
     val events: SharedFlow<UiEvent> = _events.asSharedFlow()
 
-    private var connectJob: Job? = null
-    private var timerJob: Job? = null
-
     init {
+        // Load profiles from storage
         viewModelScope.launch {
             repository.profiles.collect { list ->
                 val activeId = repository.activeProfileId.value
@@ -83,6 +85,21 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
                         activeProfileId = activeConf.id,
                         editingConfig = activeConf,
                         originalConfig = activeConf
+                    )
+                }
+            }
+        }
+
+        // Collect real VpnService state
+        viewModelScope.launch {
+            VpnStatusManager.session.collect { session ->
+                _uiState.update { state ->
+                    state.copy(
+                        vpnStatus = session.status,
+                        connectionStep = session.step,
+                        connectionStatusText = session.statusText,
+                        connectedSeconds = session.connectedSeconds,
+                        connectionLogs = session.logs
                     )
                 }
             }
@@ -291,11 +308,11 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    // --- VPN CONNECT ANIMATION & LIFECYCLE ---
-    fun openConnectionModal() {
+    // --- REAL ANDROID VPN SERVICE LIFECYCLE ---
+    fun openConnectionModal(context: Context) {
         _uiState.update { it.copy(showConnectionModal = true) }
         if (_uiState.value.vpnStatus == VpnStatus.DISCONNECTED) {
-            startVpnConnection()
+            connectRealVpn(context)
         }
     }
 
@@ -303,107 +320,46 @@ class VpnConfigViewModel(application: Application) : AndroidViewModel(applicatio
         _uiState.update { it.copy(showConnectionModal = false) }
     }
 
-    fun startVpnConnection() {
-        connectJob?.cancel()
-        timerJob?.cancel()
-
+    fun connectRealVpn(context: Context) {
         val config = _uiState.value.editingConfig
-        val proxyDesc = if (config.proxyIp.isNotBlank()) "${config.proxyIp}:${config.proxyPort.ifBlank { "8080" }}" else "Direct Connection"
-        val sshDesc = "${config.sshHost.ifBlank { "127.0.0.1" }}:${config.sshPort.ifBlank { "22" }}"
+        val vpnPrepareIntent = VpnService.prepare(context)
+        if (vpnPrepareIntent != null) {
+            viewModelScope.launch {
+                _events.emit(UiEvent.RequestVpnPermission(vpnPrepareIntent))
+            }
+        } else {
+            // Already has VPN permission, start real service
+            startCustomVpn(context)
+        }
+    }
 
+    fun onVpnPermissionGranted(context: Context) {
+        startCustomVpn(context)
+    }
+
+    fun onVpnPermissionDenied() {
         _uiState.update {
             it.copy(
-                vpnStatus = VpnStatus.CONNECTING,
-                connectionStep = 0,
-                connectionStatusText = "กำลังเริ่มการเชื่อมต่อ...",
-                connectedSeconds = 0,
-                connectionLogs = listOf("เริ่มต้นกระบวนการอุโมงค์ VPN...", "โหมดการเชื่อมต่อ: ${config.connectionMode}")
+                vpnStatus = VpnStatus.DISCONNECTED,
+                connectionStatusText = "ผู้ใช้ปฏิเสธการอนุญาตระบบ VPN"
             )
         }
-
-        connectJob = viewModelScope.launch {
-            // Step 1: Proxy / Payload Injection
-            delay(800)
-            _uiState.update {
-                it.copy(
-                    connectionStep = 1,
-                    connectionStatusText = "เชื่อมต่อ Proxy สำเร็จ",
-                    connectionLogs = it.connectionLogs + listOf(
-                        "ส่ง HTTP Payload ไปยัง $proxyDesc",
-                        "แทนที่แท็ก: [ua] -> Dalvik/2.1.0, [crlf] -> OK",
-                        "Proxy Response: HTTP/1.1 200 OK"
-                    )
-                )
-            }
-
-            // Step 2: SSH Server Handshake
-            delay(1000)
-            _uiState.update {
-                it.copy(
-                    connectionStep = 2,
-                    connectionStatusText = "กำลังเชื่อมต่อ SSH...",
-                    connectionLogs = it.connectionLogs + listOf(
-                        "Handshaked successfully to $sshDesc",
-                        "SSH-2.0-OpenSSH Protocol initialized",
-                        "Authenticate method: ${config.authMethod} (User: ${config.sshUsername.ifBlank { "vpnuser" }})",
-                        "Authentication Succeeded."
-                    )
-                )
-            }
-
-            // Step 3: Setting Network Routes
-            delay(900)
-            _uiState.update {
-                it.copy(
-                    connectionStep = 3,
-                    connectionStatusText = "กำลังตั้งค่าเส้นทางเครือข่าย...",
-                    connectionLogs = it.connectionLogs + listOf(
-                        "Allocating local forwarding port 1080",
-                        "Setting iptables and redsocks redirect rules",
-                        "Establishing secure VPN tunnel"
-                    )
-                )
-            }
-
-            // Step 4: Fully Connected
-            delay(700)
-            _uiState.update {
-                it.copy(
-                    vpnStatus = VpnStatus.CONNECTED,
-                    connectionStep = 3, // All 3 checkboxes ticked
-                    connectionStatusText = "เชื่อมต่อสำเร็จแล้ว!",
-                    connectionLogs = it.connectionLogs + listOf(
-                        "Entering interactive session.",
-                        "VPN Connected successfully! Ready to browse."
-                    )
-                )
-            }
-
-            // Start connected timer
-            startDurationTimer()
-        }
+        emitMessage("ต้องอนุญาตการเชื่อมต่อระบบ VPN ใน Android ก่อนใช้งาน")
     }
 
-    private fun startDurationTimer() {
-        timerJob?.cancel()
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                _uiState.update { it.copy(connectedSeconds = it.connectedSeconds + 1) }
-            }
-        }
+    private fun startCustomVpn(context: Context) {
+        val config = _uiState.value.editingConfig
+        CustomVpnService.startVpn(context, config)
+        emitMessage("กำลังเริ่มเชื่อมต่อ VPN: ${config.name}")
     }
 
-    fun disconnectVpn() {
-        connectJob?.cancel()
-        timerJob?.cancel()
+    fun disconnectVpn(context: Context) {
+        CustomVpnService.stopVpn(context)
         _uiState.update {
             it.copy(
                 vpnStatus = VpnStatus.DISCONNECTED,
                 connectionStep = 0,
-                connectionStatusText = "ตัดการเชื่อมต่อแล้ว",
-                connectedSeconds = 0,
-                connectionLogs = it.connectionLogs + listOf("User disconnected VPN tunnel.")
+                connectionStatusText = "ตัดการเชื่อมต่อแล้ว"
             )
         }
         emitMessage("ตัดการเชื่อมต่อ VPN แล้ว")

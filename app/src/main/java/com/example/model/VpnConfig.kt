@@ -96,32 +96,32 @@ data class VpnConfig(
     companion object {
         fun createDefault(): VpnConfig {
             return VpnConfig(
-                name = "ค่าเริ่มต้น (WebSocket CDN)",
+                name = "🇹🇭 Cloudflare CDN WebSocket (พร้อมเชื่อมต่อ)",
                 connectionMode = 1,
                 autoReplace = true,
-                payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]",
-                proxyIp = "",
-                proxyPort = "8080",
-                sshHost = "sg-server.net",
-                sshPort = "22",
+                payload = "GET / HTTP/1.1[crlf]Host: 104.16.249.249[crlf]Connection: Upgrade[crlf]User-Agent: [ua][crlf]Upgrade: websocket[crlf][crlf]",
+                proxyIp = "104.16.249.249",
+                proxyPort = "443",
+                sshHost = "104.16.249.249",
+                sshPort = "443",
                 sshUsername = "vpnuser",
                 sshPassword = "vpnpassword",
                 enableCompression = false,
                 authMethod = "password",
-                sniServerName = ""
+                sniServerName = "cloudflare.com"
             )
         }
 
         fun createSshDirect(): VpnConfig {
             return VpnConfig(
-                name = "โหมด 0: SSH Direct",
+                name = "🌐 Google Direct Tunnel (โหมด 0)",
                 connectionMode = 0,
                 autoReplace = true,
                 payload = "CONNECT [host_port] HTTP/1.1[crlf][crlf]",
                 proxyIp = "",
                 proxyPort = "",
-                sshHost = "ssh.mycloud.com",
-                sshPort = "22",
+                sshHost = "8.8.8.8",
+                sshPort = "443",
                 sshUsername = "root",
                 sshPassword = "",
                 enableCompression = true,
@@ -132,13 +132,13 @@ data class VpnConfig(
 
         fun createSslSni(): VpnConfig {
             return VpnConfig(
-                name = "โหมด 2: SSL/TLS (SNI)",
+                name = "⚡ Fast.com SSL SNI (โหมด 2)",
                 connectionMode = 2,
                 autoReplace = true,
-                payload = "CONNECT [host_port] HTTP/1.1[crlf]Host: [host][crlf][crlf]",
-                proxyIp = "104.16.249.249",
+                payload = "CONNECT [host_port] HTTP/1.1[crlf]Host: fast.com[crlf][crlf]",
+                proxyIp = "198.41.214.162",
                 proxyPort = "443",
-                sshHost = "vpn.cloudflare-cdn.com",
+                sshHost = "198.41.214.162",
                 sshPort = "443",
                 sshUsername = "vpnuser",
                 sshPassword = "",
@@ -150,19 +150,19 @@ data class VpnConfig(
 
         fun createPayloadSni(): VpnConfig {
             return VpnConfig(
-                name = "โหมด 3: Payload + SNI",
+                name = "🚀 Cloudflare Payload + SNI (โหมด 3)",
                 connectionMode = 3,
                 autoReplace = true,
-                payload = "GET / HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]",
-                proxyIp = "",
+                payload = "GET / HTTP/1.1[crlf]Host: cdn.cloudflare.com[crlf]Upgrade: websocket[crlf]Connection: Upgrade[crlf][crlf]",
+                proxyIp = "104.16.249.249",
                 proxyPort = "443",
-                sshHost = "tunnel.vipserver.net",
+                sshHost = "104.16.249.249",
                 sshPort = "443",
                 sshUsername = "client01",
                 sshPassword = "",
                 enableCompression = false,
                 authMethod = "password",
-                sniServerName = "zoom.us"
+                sniServerName = "cdn.cloudflare.com"
             )
         }
 

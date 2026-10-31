@@ -31,10 +31,10 @@ class ExampleRobolectricTest {
     val parsed = com.example.model.VpnConfig.parseIni(ini, "Test Profile")
     assertEquals(1, parsed.connectionMode)
     assertEquals(true, parsed.autoReplace)
-    assertEquals("sg-server.net", parsed.sshHost)
+    assertEquals(defaultCfg.sshHost, parsed.sshHost)
 
     val formatted = parsed.getFormattedPayload()
     org.junit.Assert.assertTrue(formatted.contains("Dalvik/2.1.0"))
-    org.junit.Assert.assertTrue(formatted.contains("sg-server.net"))
+    org.junit.Assert.assertTrue(formatted.contains(defaultCfg.sshHost))
   }
 }

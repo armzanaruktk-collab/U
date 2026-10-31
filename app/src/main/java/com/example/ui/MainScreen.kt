@@ -110,6 +110,7 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
     var showMenu by remember { mutableStateOf(false) }
     var showProfileDropdown by remember { mutableStateOf(false) }
 
@@ -119,6 +120,7 @@ fun MainScreen(
                 is UiEvent.ShowToast -> {
                     snackbarHostState.showSnackbar(event.message)
                 }
+                else -> {}
             }
         }
     }
@@ -463,7 +465,7 @@ fun MainScreen(
                                 }
 
                                 Button(
-                                    onClick = { viewModel.openConnectionModal() },
+                                    onClick = { viewModel.openConnectionModal(context) },
                                     modifier = Modifier.testTag("hero_connect_button"),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(
@@ -701,8 +703,8 @@ fun MainScreen(
             host = uiState.editingConfig.sshHost,
             port = uiState.editingConfig.sshPort,
             logs = uiState.connectionLogs,
-            onCancel = { viewModel.disconnectVpn() },
-            onDisconnect = { viewModel.disconnectVpn() },
+            onCancel = { viewModel.disconnectVpn(context) },
+            onDisconnect = { viewModel.disconnectVpn(context) },
             onCloseModal = { viewModel.closeConnectionModal() }
         )
     }
